@@ -1,55 +1,79 @@
-# The Order Achievements editing tool
-## Main business goals, objects and glossary
-The tool should be a helper for organizing and maintaining a home-made achievement system for users of an internet forum. The internet forum uses BBcode.
-The achievement system has a list of possible achievements to get, which can be assigned to users. Many users can get the same achievements; they are not unique per user.
+# **Project Specification: The Order Achievements Tool**
 
-There are 2 main business objects:
-1. **Achievements**, associated with a title, description, a point value (can be both negative and positive), a category, and a URL pointing to an image file.
-2. **Users**, simply identified with a name.
+## **1. Project Overview**
 
-And the output of the system is two lists:
-1. **The Master List**, a list of all achievements, divided into categories.
-2. **The Roster List**, a list of the achievements for each user.
+Develop a Single Page Application (SPA) to manage a custom achievement system for an internet forum. The tool allows administrators to create achievements, categorize them, and assign them to users. The primary output is generating BBCode-formatted lists ("Master List" and "Roster List") for forum publication.
 
-There should be support in the system for different categories of achievements, a display order for categories, display order of achievements within the categories and giving achievements to users, where the user's achievements are also in a particular display order.
-## Data structure
-The data should be stored in a relational database format.
-Example: 4 tables, one for achievements, one for users, one for categories and a many-to-many relation table linking users and achievements.
-All tables with have unique IDs, which can just be autoincremented integers.
-The achievements have separate columns for the title, description, point value, display order and image URL, and a foreign key relation to category.
-The users table should just have a name column.
-The categories should have a name and a display order.
-The relation table should have a composite primary key of achievement ID and user ID foreign keys, and a separate column representing the display order.
-## Functional requirements
-The following features must exist:
-- Generating the output lists, examples in these files:
-  - [master list](./forumdata/masterlist.txt) 
-  - [roster list](./forumdata/rosterlist.txt)
-- Viewing the main business objects:
-  - View lists of achievements within a category
-  - View lists of achievement categories
-  - View lists of users
-  - View single user and their associated achievements
-  - *(optional, redundant with generating output list)* Viewing list of all achievements in all categories in their order
-  - *(optional, redundant with generating output list)* Viewing list of all users with all achievements, with users sorted by name and achievements in proper order
-- Editing the achievements and list
-  - Create new achievements
-  - Edit properties on achievements, i.e. title, description, points, image URL and display order
-  - Switch category on achievement
-- Editing the users
-  - Add users
-  - Edit properties on users, i.e. name
-  - Add achievements to a user  
-  - Change the order of a user's achievements
-- Editing the categories
-  - Add new category
-  - Edit properties on category, i.e. name and display order
-  - Reorder achievements within the category
-  - Sort achievements within the category by Title
+---
 
-## Non-functional requirements
-- The tool should have a high quality architecture, built using standard industry best practices. Example: A single page application following principles of modularity, feature-sliced design, Clean architecture, Domain Driven Design, SOLID, etc.
-- Tool must be built with PHP version 8.3.29, with no external libraries used
-- The database must be MySQL version 8.0.44
-- There must be two modes of operation: The "production" mode which reads and writes all data in a MySQL database, and a "demo" mode which reads data from CSV files but never saves the user's changes beyond the web application memory.
-- Security must be basic authentication to log in, and free access to all features from there. When in demo mode, the basic authentication is turned off and there is always free access.
+## **2. Domain Model & Data Schema**
+
+The system relies on a relational model consisting of three core entities and one association table. All primary keys are auto-incremented integers.
+
+| Entity | Attributes | Relationships |
+| --- | --- | --- |
+| **Category** | `ID`, `Name`, `Display_Order` | One-to-Many with Achievements. |
+| **Achievement** | `ID`, `Title`, `Description`, `Points` (signed int), `Image_URL`, `Display_Order`, `Category_ID` | Many-to-One with Categories. |
+| **User** | `ID`, `Name` | Many-to-Many with Achievements. |
+| **User_Achievement** | `User_ID`, `Achievement_ID`, `Display_Order` | Composite PK. Links Users to Achievements with a specific sort order. |
+
+---
+
+## **3. Functional Requirements**
+
+**3.1. Category Management**
+
+* **Create/Edit:** Add new categories or rename existing ones.
+* **Ordering:**
+* Adjust the global display order of categories.
+* Reorder achievements manually within a specific category.
+* **Bulk Action:** Sort all achievements within a category alphabetically by Title.
+
+
+
+**3.2. Achievement Management**
+
+* **CRUD:** Create and edit achievements (Title, Description, Points, Image URL).
+* **Categorization:** Move achievements between categories.
+* **Viewing:** Filter and view achievements by category.
+
+**3.3. User Management**
+
+* **CRUD:** Create and edit users (Name).
+* **Assignment:** Assign specific achievements to users.
+* **Ordering:** Manually adjust the display order of a user’s assigned achievements.
+* **Viewing:** View a specific user and their list of achievements.
+
+**3.4. Output Generation**
+The system must generate two specific text outputs (likely BBCode):
+
+* **The Master List:** All achievements grouped by category, respecting category and achievement sort orders.
+* **The Roster List:** A list per user showing their assigned achievements, respecting the user-specific assignment order.
+
+---
+
+## **4. Technical Architecture & Constraints**
+
+**4.1. Technology Stack**
+
+* **Language:** PHP 8.3.29 (Strictly **no external libraries** or frameworks).
+* **Database:** MySQL 8.0.44.
+* **Frontend:** Single Page Application (SPA).
+
+**4.2. Architecture Patterns**
+
+* Must adhere to high-quality industry standards: Clean Architecture, Domain-Driven Design (DDD), SOLID principles, and Feature-Sliced Design.
+
+**4.3. Operating Modes**
+The application must support two distinct environments via configuration:
+
+| Feature | **Production Mode** | **Demo Mode** |
+| --- | --- | --- |
+| **Data Source** | MySQL Database (Read/Write) | CSV Files (Read-only on load) |
+| **Persistence** | Permanent (SQL) | Temporary (In-memory/Session only). Changes are not saved to CSV. |
+| **Security** | Basic Authentication required. | Authentication disabled (Free access). |
+
+**4.4. Security**
+
+* **Authentication:** Basic Authentication for login (Production only).
+* **Authorization:** Full access to all features once logged in (or immediately in Demo mode).
