@@ -1,0 +1,20 @@
+/* Minimal global styles */
+body{font-family:Segoe UI,Arial,Helvetica,sans-serif;background:#fafafa;color:#222;margin:0}
+header,footer{box-shadow:0 1px 0 rgba(0,0,0,0.05)}
+main{background:#fff}
+a{color:#0066cc}
+
+/* Drag handle */
+.drag-handle{cursor:grab;margin-right:0.5rem;display:inline-block}
+.drag-handle:active{cursor:grabbing}
+.draggable-item{display:flex;align-items:center;gap:0.5rem}
+
+/* List item visuals */
+ul { list-style: none; padding: 0; }
+li.draggable-item { padding: 0.5rem 0.75rem; border-bottom: 1px solid #eee; }
+li.draggable-item:hover { background: #f7f9fb; }
+li.draggable-item:focus { outline: 2px solid #cce5ff; }
+
+/* Toast */
+.toast { position: fixed; right: 1rem; bottom: 1rem; background: #333; color:#fff; padding: 0.5rem 1rem; border-radius:4px; opacity:0; transform: translateY(10px); transition: opacity .2s, transform .2s; }
+.toast.show { opacity: 1; transform: translateY(0); }

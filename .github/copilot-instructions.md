@@ -16,6 +16,23 @@ Important Files & Data
 - Project spec & architecture: `docs/requirements.md` and `docs/architecture.md` (read both before changing modes or persistence).
 - Helper script: `csv_generator.ps1` (PowerShell) — regenerates CSV outputs used in Demo mode.
 
+Quick Links
+- `config/app.php` (mode + auth)
+- `config/database.php` (MySQL creds)
+- `src/Core/Container.php` (wiring + service factories)
+- `src/Core/Renderer.php` (view rendering + escaping)
+- `src/Infrastructure/Persistence/InMemory/` (CSV seeding + session repos)
+- `src/Infrastructure/Persistence/MySQL/` (PDO-backed repos)
+- `public/index.php` (front controller + routes)
+- `public/assets/js/sortable.js` (drag & drop client)
+- `scripts/smoke.php`, `scripts/check_csvs.php`, `scripts/seed_demo.php`
+
+PR Checklist
+- Run `php scripts/check_csvs.php` and `php scripts/smoke.php` locally.
+- Confirm `config/app.php` `mode` is set correctly for the change (demo vs production).
+- Ensure new persistence logic is behind repository interfaces in `src/Modules/*/Repository/`.
+- Add or update views in `src/Modules/<Feature>/Views/` and use `Renderer::e()` for escaping.
+
 Developer Workflows (concrete)
 ------------------------------
 - Run locally (quick dev server):
