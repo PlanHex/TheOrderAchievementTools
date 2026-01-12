@@ -4,7 +4,7 @@ This repository implements a small, framework-free PHP MVC app with a "feature-f
 
 Quick Architecture Summary
 --------------------------
-- Feature-first MVC: domain features live under `src/Modules/<Feature>/` (Controller, Domain, Repository, Views). See `editor/architecture.md` for the full layout.
+- Feature-first MVC: domain features live under `src/Modules/<Feature>/` (Controller, Domain, Repository, Views). See `docs/architecture.md` for the full layout.
 - Core services live in `src/Core/` (Container, Router, Renderer, Database wrapper).
 - Persistence implementations live in `src/Infrastructure/Persistence/` with two modes: MySQL and InMemory/Session (Dual Mode).
 - Public webroot is `public/` (entry point `public/index.php`) and static assets under `public/assets/` (CSS + minimal JS). Drag-and-drop JS lives in `public/assets/js/sortable.js`.
@@ -13,7 +13,7 @@ Important Files & Data
 ----------------------
 - Data CSVs (Demo mode): `data/achievements.csv`, `data/categories.csv`, `data/users.csv`, `data/user_achievements.csv`.
 - SQL schema (Production): `sql/sql_tables.sql` — run this on your MySQL server to create schema.
-- Project spec & architecture: `editor/requirements.md` and `editor/architecture.md` (read both before changing modes or persistence).
+- Project spec & architecture: `docs/requirements.md` and `docs/architecture.md` (read both before changing modes or persistence).
 - Helper script: `csv_generator.ps1` (PowerShell) — regenerates CSV outputs used in Demo mode.
 
 Developer Workflows (concrete)
@@ -61,7 +61,7 @@ What to watch for when changing code
 Examples & Starting Tasks for an AI Agent
 -----------------------------------------
 - Add a new achievement field: update the Domain entity under `src/Modules/Achievement/Domain/`, adjust the repository interface, and implement persistence in both MySQL and InMemory repos.
-- Implement export pages: Master List and Roster List should render BBCode; see `editor/requirements.md` for the expected outputs and base the view markup in `src/Modules/Achievement/Views/` or `src/Modules/User/Views/`.
+- Implement export pages: Master List and Roster List should render BBCode; see `docs/requirements.md` for the expected outputs and base the view markup in `src/Modules/Achievement/Views/` or `src/Modules/User/Views/`.
 
 If anything is unclear
 ----------------------
