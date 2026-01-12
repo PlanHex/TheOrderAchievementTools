@@ -1,118 +1,131 @@
-### **1. Architecture Overview**
+# **1. Architecture Overview**
 
-The system relies on a **Dependency Injection (DI) Container** to handle the "Dual Mode" requirement. The Application Layer (Use Cases) never knows if it is talking to MySQL or CSV; it only relies on Interfaces.
+The system is a **Traditional MVC (Model-View-Controller)** application.
+* **The Controller:** Handles the request, interacts with the Domain Layer, and selects a View.
+* **The View:** A simple PHP file that renders HTML using data provided by the Controller.
+* **The Model:** Managed via Repositories injected by the DI Container.
 
-* **Production Mode:** The Container injects `MySQLRepository` implementations.
-* **Demo Mode:** The Container injects `SessionRepository` implementations (which load from CSV on start but persist to `$_SESSION`).
+**Dual Mode Strategy:**
+The "Dual Mode" (MySQL vs. Session/CSV) is handled entirely in the `src/Infrastructure` layer. The Controllers and Views do not know which mode is active.
 
-### **2. PHP Directory Structure**
+# **2. PHP Directory Structure**
 
-This structure uses a **Feature-First** organization (aligning with Feature-Sliced Design). Instead of grouping by technical type (Controllers, Models), we group by Business Domain (Achievements, Users).
+This structure uses a **Feature-First** organization. Views (HTML templates) are co-located with their relevant domain logic, rather than hidden in a global `templates` folder.
 
 ```text
 /
 ├── config/                 # Configuration files
 │   ├── app.php             # Toggle 'mode' => 'production' | 'demo'
 │   └── database.php        # MySQL credentials
-├── data/                   # Data storage for Demo mode
-│   ├── achievements.csv
-│   ├── categories.csv
-│   └── users.csv
+├── data/                   # Data storage for Demo mode (CSV)
 ├── public/                 # Web root
-│   ├── assets/             # CSS, JS, Images
+│   ├── assets/             
+│   │   ├── css/            # global.css, layout.css
+│   │   └── js/             # sortable.js (Drag & Drop logic only)
 │   ├── index.php           # Entry point (Front Controller)
-│   └── .htaccess           # Rewrite rules for routing
+│   └── .htaccess           # Routing rules
 ├── src/                    # Application Source Code
-│   ├── Core/               # Shared Kernel (Infrastructure agnostic)
-│   │   ├── Container.php   # Simple Dependency Injection Container
-│   │   ├── Router.php      # Custom Regex Router
-│   │   ├── Database.php    # PDO Wrapper (Singleton)
-│   │   ├── Controller.php  # Base Controller
-│   │   └── View.php        # JSON/HTML Renderer
-│   ├── Shared/             # Shared Domain objects
-│   │   ├── Entity.php      # Base Entity class
-│   │   └── ValueObject.php 
+│   ├── Core/               # Shared Kernel
+│   │   ├── Container.php   # Dependency Injection
+│   │   ├── Router.php      # Maps URL -> Controller
+│   │   ├── Renderer.php    # Helper to include View files safely
+│   │   └── Database.php    # PDO Wrapper
 │   ├── Modules/            # FEATURE SLICES
 │   │   ├── Achievement/
-│   │   │   ├── Controller/      # HTTP Entry points
+│   │   │   ├── Controller/      # AchievementController.php
 │   │   │   ├── Domain/          # Entity: Achievement
-│   │   │   ├── UseCase/         # CreateAchievement, ReorderAchievements
-│   │   │   └── Repository/      # Interface: AchievementRepository
+│   │   │   ├── Repository/      # Interface: AchievementRepository
+│   │   │   └── Views/           # HTML Templates
+│   │   │       ├── index.php    # List all achievements
+│   │   │       ├── create.php   # Form to create
+│   │   │       └── edit.php     # Form to edit
 │   │   ├── Category/
 │   │   │   ├── Controller/
 │   │   │   ├── Domain/
-│   │   │   ├── UseCase/
-│   │   │   └── Repository/
+│   │   │   ├── Repository/
+│   │   │   └── Views/           # index.php (Reorder UI)
 │   │   ├── User/
 │   │   │   ├── Controller/
 │   │   │   ├── Domain/
-│   │   │   ├── UseCase/
-│   │   │   └── Repository/
-│   │   └── Auth/           # Basic Auth handling
-│   └── Infrastructure/     # Concrete Implementations (The "Dirty" details)
+│   │   │   ├── Repository/
+│   │   │   └── Views/           # show.php (User Profile)
+│   │   └── Auth/           
+│   └── Infrastructure/     # Concrete Implementations
 │       ├── Persistence/
 │       │   ├── MySQL/      # Real DB implementations
-│       │   │   ├── MySQLAchievementRepository.php
-│       │   │   └── ...
-│       │   └── InMemory/   # Demo mode implementations
-│       │       ├── CsvLoader.php
-│       │       ├── SessionAchievementRepository.php
-│       │       └── ...
-└── templates/              # HTML Skeleton for the SPA
-    └── app.html
-
+│       │   └── InMemory/   # Demo (Session/CSV) implementations
+└── templates/              # Global Shared Layouts
+    ├── header.php          # Navigation & <head>
+    └── footer.php          # Scripts & </body>
 ```
 
 ---
 
-### **3. Key Architecture Components**
+# **3. Key Architecture Components**
 
-#### **3.1. The "Switch" (Repository Pattern)**
+## **3.1. The Renderer (View Engine)**
 
-This is the most critical part of the architecture to satisfy the Non-Functional Requirement of two modes.
+Instead of returning JSON, Controllers use a `Renderer` class.
 
-1. **Interface (Contract):** Defined in `src/Modules/Achievement/Repository/AchievementRepositoryInterface.php`.
-2. **Implementation A (Production):** `src/Infrastructure/Persistence/MySQL/MySQLAchievementRepository.php` uses raw PDO to execute SQL queries.
-3. **Implementation B (Demo):** `src/Infrastructure/Persistence/InMemory/SessionAchievementRepository.php`.
-* *Logic:* On `__construct`, check if `$_SESSION['achievements']` exists. If not, parse `data/achievements.csv` using `fgetcsv` and store in Session. All `save()` methods update the Session array, never the CSV file.
+* **Role:** Extracts data arrays into PHP variables and includes the specific View file.
+* **Layouts:** Wraps the specific View content within `templates/header.php` and `templates/footer.php` automatically.
+
+```php
+// Example usage in Controller
+return $this->renderer->render('Modules/Achievement/Views/index', [
+    'achievements' => $achievements,
+    'title' => 'All Achievements'
+]);
+
+```
+
+## **3.2. Routing & POST-Redirect-GET**
+
+To prevent form resubmission issues and keep the flow simple:
+
+1. **GET /achievements/create:** Displays the HTML form.
+2. **POST /achievements/store:**
+* Controller accepts data.
+* Calls `$repository->save($entity)`.
+* **Redirects** to `/achievements` (HTTP 302).
 
 
+3. **GET /achievements:** Displays the updated list.
 
-#### **3.2. Core Kernel (No Libraries)**
+## **3.3. Hybrid Frontend (Drag & Drop)**
 
-Since we cannot use Composer packages, `src/Core` must handle the heavy lifting:
+While most pages are static HTML, "Reordering" requires JavaScript for a good UX.
 
-* **Autoloader:** A simple `spl_autoload_register` function in `index.php` that maps namespaces to file paths (PSR-4 style).
-* **Router:** A class that takes the `$_SERVER['REQUEST_URI']` and `$_SERVER['REQUEST_METHOD']`, matches it against a defined list of routes, and instantiates the correct Controller.
-* **DI Container:** A simple registry where we bind interfaces to classes based on `config/app.php`.
+* **The View:** Renders a list with `data-id` attributes.
+* **The JS:** `public/assets/js/sortable.js` listens for drag events.
+* **The Interaction:**
+1. User drops item.
+2. JS sends an asynchronous `POST /api/reorder` (fetch API).
+3. Backend updates the order in DB/Session.
+4. JS displays a small "Saved" toast notification (no page reload needed).
 
-#### **3.3. Feature-Sliced Design in PHP**
 
-Each folder in `src/Modules/` represents a vertical slice.
-
-* **Benefits:** If you need to change how "Users" work, you only touch the `User` folder.
-* **Isolation:** The `Achievement` module should not query the `User` database table directly. It should go through the `UserRepository` interface if needed.
 
 ---
 
-### **4. Data Flow Example**
+# **4. Data Flow Example**
 
 **Scenario:** A user wants to "Create a new Achievement" in **Demo Mode**.
 
-1. **Request:** `POST /api/achievements` hits `public/index.php`.
-2. **Bootstrap:** `index.php` loads `config/app.php` and sees `'mode' => 'demo'`.
-3. **Container:** The DI Container binds `AchievementRepositoryInterface` to `SessionAchievementRepository`.
-4. **Routing:** Router dispatches to `Modules/Achievement/Controller/CreateController`.
-5. **Use Case:** Controller calls `CreateAchievementUseCase`.
-* The Use Case validates input.
-* It creates a new `Achievement` Entity.
-* It calls `$repository->save($achievement)`.
+1. **Request:** User submits `<form action="/achievements/store" method="POST">`.
+2. **Bootstrap:** `index.php` loads config, sees `'mode' => 'demo'`.
+3. **Container:** Injects `SessionAchievementRepository` into the Controller.
+4. **Action:**
+* Controller validates `$_POST` data.
+* Creates `Achievement` Entity.
+* Calls `$repository->save($achievement)`.
 
 
-6. **Persistence:**
-* The `SessionAchievementRepository` receives the entity.
-* It pushes the data into `$_SESSION['achievements']`.
-* **Crucial:** No SQL is executed, and the CSV file is untouched.
+5. **Persistence:**
+* Repository updates `$_SESSION['achievements']`.
+* (No SQL executed, CSV untouched).
 
 
-7. **Response:** Controller returns JSON `201 Created`.
+6. **Response:**
+* Controller sends header: `Location: /achievements`.
+* Browser follows redirect and loads the List View with the new item visible.
