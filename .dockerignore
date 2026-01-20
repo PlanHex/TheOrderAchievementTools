@@ -1,0 +1,7 @@
+vendor
+.git
+node_modules
+tests
+/.vscode
+/.idea
+/.env

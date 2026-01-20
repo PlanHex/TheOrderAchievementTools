@@ -91,4 +91,31 @@ If you run into environment-specific issues (permissions, PHP modules), collect 
 
 If you want I can add more tests or CI config.
 # TheOrderAchievementTools
+ 
+Docker Compose: local development
+---------------------------------
+
+- Build and run the app and a local MySQL instance with Docker Compose:
+
+```powershell
+docker compose up --build -d
+```
+
+- Visit `http://localhost:8000/` in your browser.
+- The bundled MySQL service listens on port `3306`. Default credentials in the compose file:
+	- database: `achievements`
+	- user: `app`
+	- password: `secret`
+	- root password: `root`
+
+- Xdebug is preconfigured in the image and uses `host.docker.internal:9003` by default — configure your IDE to listen on port `9003`.
+
+- To use MySQL rather than demo CSVs, edit `config/app.php` and set `'mode' => 'production'` and confirm `config/database.php` uses the above credentials (or use env-backed configuration as you prefer).
+
+Tips
+- If you only need the PHP app without MySQL, you can run the app on the built-in server:
+
+```powershell
+php -S 127.0.0.1:8000 -t public
+```
 

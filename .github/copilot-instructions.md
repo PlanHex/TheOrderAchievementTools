@@ -12,9 +12,9 @@ Quick Architecture Summary
 Important Files & Data
 ----------------------
 - Data CSVs (Demo mode): `data/achievements.csv`, `data/categories.csv`, `data/users.csv`, `data/user_achievements.csv`.
-- SQL schema (Production): `sql/sql_tables.sql` — run this on your MySQL server to create schema.
+- SQL schema (Production): `data/sql/sql_tables.sql` — run this on your MySQL server to create schema.
 - Project spec & architecture: `docs/requirements.md` and `docs/architecture.md` (read both before changing modes or persistence).
-- Helper script: `csv_generator.ps1` (PowerShell) — regenerates CSV outputs used in Demo mode.
+- Helper script: `data/scripts/csv_generator.ps1` (PowerShell) — regenerates CSV outputs used in Demo mode.
 
 Quick Links
 - `config/app.php` (mode + auth)
@@ -43,8 +43,8 @@ Developer Workflows (concrete)
   ```
 
 - Switch modes: update `config/app.php` to set `'mode' => 'production'` or `'mode' => 'demo'`. In demo mode the app reads `data/*.csv` and keeps changes in session/in-memory repositories; in production it uses `config/database.php` + MySQL.
-- Initialize DB: apply `sql/sql_tables.sql` to your MySQL 8 server and update `config/database.php` with credentials.
-- Rebuild CSVs: run `.\csv_generator.ps1` from the repo root in PowerShell to regenerate CSV files if needed.
+- Initialize DB: apply `data/sql/sql_tables.sql` to your MySQL 8 server and update `config/database.php` with credentials.
+- Rebuild CSVs: run `.\data\scripts\csv_generator.ps1` from the repo root in PowerShell to regenerate CSV files if needed.
 
 Project Conventions & Patterns (how to edit)
 -------------------------------------------
@@ -68,6 +68,24 @@ Integration Details & Data Flow Notes
 - Dual Mode: The DI container (in `src/Core/Container.php`) decides which repository implementation to inject based on `config/app.php` `mode` value. Controllers should work with interfaces only.
 - Reordering UI: drag-and-drop in the browser posts to an API route (e.g., `/api/reorder`) which updates display_order via the injected repository — check `public/assets/js/sortable.js` for client behavior and follow POST->repository flow on the server.
 - Security: Production mode expects Basic Auth (Auth module) and CSRF tokens on forms; Demo mode disables authentication. All HTML output should be escaped via Renderer.
+
+Docker Compose: Local deployment & debugging
+------------------------------------------
+- A `docker-compose.yml` and `Dockerfile` are included for quick local development with a MySQL service and Xdebug enabled.
+- Build and run (from repo root):
+
+```powershell
+docker compose up --build -d
+```
+
+- App will be available at `http://localhost:8000/` (the container maps port 80 -> 8000).
+- MySQL is exposed on port `3306` (user: `app`, pass: `secret`, db: `achievements`, root: `root`).
+- Xdebug is enabled and defaults to `client_host=host.docker.internal` and `client_port=9003`. Adjust `XDEBUG_CONFIG` in `docker-compose.yml` or your IDE's listener config if necessary.
+- For demo mode keep `config/app.php` `'mode' => 'demo'`. To use MySQL set `'mode' => 'production'` and update `config/database.php` to match the `db` service credentials above or map envs as needed.
+
+Notes for debugging on Windows:
+- Docker Desktop exposes the host via `host.docker.internal` which Xdebug uses by default in the image. If using WSL2 or a different setup, adjust `xdebug.client_host` accordingly.
+
 
 What to watch for when changing code
 -----------------------------------
