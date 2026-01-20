@@ -1,6 +1,6 @@
 # Configuration
-$masterFile = "./forumdata/masterlist.txt"
-$rosterFile = "./forumdata/rosterlist.txt"
+$masterFile = "./data/forumdata/masterlist.txt"
+$rosterFile = "./data/forumdata/rosterlist.txt"
 $delimiter  = "|"
 
 # Output Files
