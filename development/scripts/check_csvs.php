@@ -1,10 +1,10 @@
 <?php
 // Check presence and size of expected data CSVs
 $files = [
-    __DIR__ . '/../data/categories.csv',
-    __DIR__ . '/../data/achievements.csv',
-    __DIR__ . '/../data/users.csv',
-    __DIR__ . '/../data/user_achievements.csv',
+    __DIR__ . '/../../data/categories.csv',
+    __DIR__ . '/../../data/achievements.csv',
+    __DIR__ . '/../../data/users.csv',
+    __DIR__ . '/../../data/user_achievements.csv',
 ];
 $ok = true;
 foreach ($files as $f) {

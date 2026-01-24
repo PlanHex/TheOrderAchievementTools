@@ -41,13 +41,13 @@ Open `http://127.0.0.1:8000` in your browser.
 
 **Demo Mode (Default)**
 - Edit `production/config/app.php` and set `'mode' => 'demo'`
-- The app reads CSV files from `development/data/`
+- The app reads CSV files from `data/`
 - Changes are stored in PHP session (not persistent)
 
 **Production Mode (MySQL)**
 - Install MySQL 8.0+
 - Create a database: `CREATE DATABASE achievements;`
-- Import schema: `mysql achievements < development/data/sql/sql_tables.sql`
+- Import schema: `mysql achievements < data/sql/sql_tables.sql`
 - Update `production/config/database.php` with your credentials
 - Edit `production/config/app.php` and set `'mode' => 'production'`
 
@@ -154,7 +154,7 @@ Both implement the same interfaces, so controllers are agnostic to persistence.
 2. Update both repository implementations:
    - `production/src/Infrastructure/Persistence/MySQL/AchievementRepository.php`
    - `production/src/Infrastructure/Persistence/InMemory/AchievementRepository.php`
-3. Update `development/data/achievements.csv` if in demo mode
+3. Update `data/achievements.csv` if in demo mode
 4. Update the views in `production/src/Modules/Achievement/Views/`
 
 ### Add a New Route
@@ -174,7 +174,7 @@ Remember to use `<?= $renderer->e($variable) ?>` to escape user data.
 If you modify seed data, regenerate the CSVs:
 
 ```powershell
-cd development/data/scripts
+cd data/scripts
 ./csv_generator.ps1
 ```
 
@@ -272,7 +272,7 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for server setup instructions.
 
 ### CSV files not loading
 - Run `php development/scripts/check_csvs.php`
-- Verify CSV files exist in `development/data/`
+- Verify CSV files exist in `data/`
 
 ---
 

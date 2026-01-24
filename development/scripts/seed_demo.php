@@ -14,7 +14,7 @@ spl_autoload_register(function ($class) {
     return false;
 });
 
-$dataDir = __DIR__ . '/../data';
+$dataDir = __DIR__ . '/../../data';
 new \Infrastructure\Persistence\InMemory\CategoryRepository($dataDir);
 new \Infrastructure\Persistence\InMemory\AchievementRepository($dataDir);
 new \Infrastructure\Persistence\InMemory\UserRepository($dataDir);

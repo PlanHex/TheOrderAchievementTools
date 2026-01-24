@@ -13,10 +13,10 @@ Quick Architecture Summary
 
 Important Files & Data
 ----------------------
-- Data CSVs (Demo mode): `development/data/achievements.csv`, `development/data/categories.csv`, `development/data/users.csv`, `development/data/user_achievements.csv`.
-- SQL schema (Production): `development/data/sql/sql_tables.sql` — run this on your MySQL server to create schema.
+- Data CSVs (Demo mode): `data/achievements.csv`, `data/categories.csv`, `data/users.csv`, `data/user_achievements.csv`.
+- SQL schema (Production): `data/sql/sql_tables.sql` — run this on your MySQL server to create schema.
 - Project spec & architecture: `docs/requirements.md` and `docs/architecture.md` (read both before changing modes or persistence).
-- Helper script: `development/data/scripts/csv_generator.ps1` (PowerShell) — regenerates CSV outputs used in Demo mode.
+- Helper script: `data/scripts/csv_generator.ps1` (PowerShell) — regenerates CSV outputs used in Demo mode.
 
 Quick Links (within production/ folder)
 - `config/app.php` (mode + auth)
@@ -49,9 +49,9 @@ Developer Workflows (concrete)
   php -S 127.0.0.1:8000
   ```
 
-- Switch modes: update `production/config/app.php` to set `'mode' => 'production'` or `'mode' => 'demo'`. In demo mode the app reads `development/data/*.csv` and keeps changes in session/in-memory repositories; in production it uses `production/config/database.php` + MySQL.
-- Initialize DB: apply `development/data/sql/sql_tables.sql` to your MySQL 8 server and update `production/config/database.php` with credentials.
-- Rebuild CSVs: run `.\development\data\scripts\csv_generator.ps1` from the repo root in PowerShell to regenerate CSV files if needed.
+- Switch modes: update `production/config/app.php` to set `'mode' => 'production'` or `'mode' => 'demo'`. In demo mode the app reads `data/*.csv` and keeps changes in session/in-memory repositories; in production it uses `production/config/database.php` + MySQL.
+- Initialize DB: apply `data/sql/sql_tables.sql` to your MySQL 8 server and update `production/config/database.php` with credentials.
+- Rebuild CSVs: run `.\data\scripts\csv_generator.ps1` from the repo root in PowerShell to regenerate CSV files if needed.
 
 Project Conventions & Patterns (how to edit)
 -------------------------------------------

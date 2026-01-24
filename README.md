@@ -72,12 +72,12 @@ Docker and test setup for development and CI:
 
 **Development (Demo Mode):**
 - Edit production/config/app.php and set 'mode' => 'demo'
-- Demo mode reads CSV files from development/data/ and stores changes in session
+- Demo mode reads CSV files from `data/` and stores changes in session
 
 **Production (MySQL Mode):**
-- Edit production/config/app.php and set 'mode' => 'production'
-- Update production/config/database.php with your MySQL credentials
-- Run the SQL schema from development/data/sql/sql_tables.sql
+- Edit `production/config/app.php` and set `'mode' => 'production'`
+- Update `production/config/database.php` with your MySQL credentials
+- Run the SQL schema from `data/sql/sql_tables.sql`
 
 ---
 
@@ -118,8 +118,8 @@ See `docs/architecture.md` for detailed design documentation.
 | production/config/database.php | MySQL credentials |
 | production/public/index.php | Front controller & routes |
 | production/src/Core/Container.php | Dependency injection |
-| development/data/ | CSV data files & forum outputs |
-| development/scripts/ | Utility scripts |
+| `development/scripts/` | Utility scripts |
+| `data/` | CSV data files and SQL schema |
 | local/docker/docker-compose.yml | Docker setup |
 
 ---

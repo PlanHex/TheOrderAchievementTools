@@ -48,7 +48,7 @@ docker compose down
 ### Deploy to Server
 1. Copy `production/` to server
 2. Update `production/config/app.php` and `production/config/database.php`
-3. Import `development/data/sql/sql_tables.sql` into MySQL
+3. Import `data/sql/sql_tables.sql` into MySQL
 4. Point web server to `production/public/`
 
 ## Directory Structure
@@ -133,7 +133,7 @@ php development/scripts/seed_demo.php
 
 ### Regenerate CSVs
 ```bash
-cd development/data/scripts
+cd data/scripts
 ./csv_generator.ps1
 ```
 
@@ -172,7 +172,7 @@ mysql -h 127.0.0.1 -u app -p -D order_achievements
 
 ### CSV Files Not Loading
 - Run: `php development/scripts/check_csvs.php`
-- Check files exist in `development/data/`
+- Check files exist in `data/`
 - Set mode to `'demo'` in `config/app.php`
 
 ### Tests Failing

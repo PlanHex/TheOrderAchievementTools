@@ -13,8 +13,8 @@ WORKDIR /var/www/html
 # Copy production code
 COPY ../production /var/www/html
 
-# Copy development data (for demo mode testing)
-COPY ../development/data /var/www/html/../development/data
+# Copy data files (for demo mode testing)
+COPY ../data /var/www/html/../data
 
 RUN chown -R www-data:www-data /var/www/html
 

@@ -30,7 +30,7 @@ class Container
 
         // repositories: pick InMemory vs MySQL based on app.mode
         $mode = $this->config['app']['mode'] ?? ($this->config['app'] ?? [])['mode'] ?? 'demo';
-        $dataDir = __DIR__ . '/../../data';
+        $dataDir = $this->config['app']['data_dir'] ?? __DIR__ . '/../../data';
 
         // Category repository
         $this->set('category_repository', function ($c) use ($mode, $dataDir) {
