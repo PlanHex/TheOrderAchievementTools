@@ -12,6 +12,7 @@
         <h2 style="margin:0;font-size:1rem">The Order — Achievements</h2>
         <nav style="margin-left:auto">
             <a href="/" style="color:#fff;margin-right:1rem">Home</a>
+            <a href="/categories" style="color:#fff;margin-right:1rem">Categories</a>
             <a href="/achievements" style="color:#fff;margin-right:1rem">Achievements</a>
             <a href="/users" style="color:#fff">Users</a>
         </nav>

@@ -2,6 +2,7 @@
 
 /vendor/*
 /config/app.php
+/config/database.php
 
 /tmp/cache/models/*
 !/tmp/cache/models/empty

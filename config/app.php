@@ -14,7 +14,7 @@ return [
 
     // Authentication credentials (required in production mode)
     'auth' => [
-        'user' => '',
-        'pass' => '',
+        'user' => 'admin',
+        'pass' => 'placeholder',
     ],
 ];

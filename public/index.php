@@ -31,8 +31,9 @@ $router->add('GET', '/', function () use ($renderer) {
     echo $renderer->render('header');
     echo '<main style="padding:1rem"><h1>The Order Achievements Tool</h1>';
     echo '<p>Welcome — use the navigation to view Categories, Achievements, or Users.</p>';
-    echo '<ul><li><a href="/export/master">Export: Master List</a></li>';
-    echo '<li><a href="/export/roster?user_id=1">Export: Roster (user 1)</a></li></ul></main>';
+    echo '<ul><li><a href="/export/master">Export: Master List (all achievements)</a></li>';
+    echo '<li><a href="/export/roster">Export: Complete Roster (all users)</a></li>';
+    echo '<li><a href="/export/roster?user_id=1">Export: Individual Roster (user 1)</a></li></ul></main>';
     echo $renderer->render('footer');
 });
 
@@ -49,15 +50,18 @@ $router->add('GET', '/categories/create', function () use ($renderer) {
 });
 
 $router->add('POST', '/categories/store', function () use ($container, $renderer) {
-    $ctrl = new \Modules\Category\Controller\CategoryController($container->get('category_repository'), $renderer);
+    $ctrl = new \Modules\Category\Controller\CategoryController($container->get('category_repository'), null, $renderer);
     $ctrl->store();
 });
 
+$router->add('POST', '/categories/:id/sort-alphabetically', function ($id) use ($container, $renderer) {
+    $ctrl = new \Modules\Category\Controller\CategoryController($container->get('category_repository'), $container->get('achievement_repository'), $renderer);
+    $ctrl->sortAlphabetically($id);
+});
+
 $router->add('GET', '/achievements', function () use ($container, $renderer) {
-    $repo = $container->get('achievement_repository');
-    $catId = isset($_GET['category']) ? (int)$_GET['category'] : null;
-    $achievements = $repo->all($catId);
-    $renderer->renderWithLayout('src/Modules/Achievement/Views/index', ['achievements' => $achievements, 'category_id' => $catId]);
+    $ctrl = new \Modules\Achievement\Controller\AchievementController($container->get('achievement_repository'), $container->get('category_repository'), $renderer);
+    $ctrl->index();
 });
 
 $router->add('GET', '/achievements/create', function () use ($container, $renderer) {
@@ -66,9 +70,19 @@ $router->add('GET', '/achievements/create', function () use ($container, $render
     $renderer->renderWithLayout('src/Modules/Achievement/Views/create', ['categories' => $categories]);
 });
 
+$router->add('GET', '/achievements/:id/edit', function ($id) use ($container, $renderer) {
+    $ctrl = new \Modules\Achievement\Controller\AchievementController($container->get('achievement_repository'), $container->get('category_repository'), $renderer);
+    $ctrl->edit($id);
+});
+
 $router->add('POST', '/achievements/store', function () use ($container, $renderer) {
     $ctrl = new \Modules\Achievement\Controller\AchievementController($container->get('achievement_repository'), $container->get('category_repository'), $renderer);
     $ctrl->store();
+});
+
+$router->add('POST', '/achievements/:id/update', function ($id) use ($container, $renderer) {
+    $ctrl = new \Modules\Achievement\Controller\AchievementController($container->get('achievement_repository'), $container->get('category_repository'), $renderer);
+    $ctrl->update($id);
 });
 
 $router->add('GET', '/users', function () use ($container, $renderer) {
@@ -90,9 +104,20 @@ $router->add('GET', '/export/master', function () use ($container, $renderer) {
     $achRepo = $container->get('achievement_repository');
     $catRepo = $container->get('category_repository');
     $categories = $catRepo->all();
+    
+    // Sort categories by display_order
+    usort($categories, function($a, $b) {
+        return $a->displayOrder <=> $b->displayOrder;
+    });
+    
     $grouped = [];
     foreach ($categories as $cat) {
-        $grouped[$cat->id] = ['category' => $cat, 'achievements' => $achRepo->all($cat->id)];
+        $achs = $achRepo->all($cat->id);
+        // Sort achievements by display_order
+        usort($achs, function($a, $b) {
+            return $a->displayOrder <=> $b->displayOrder;
+        });
+        $grouped[$cat->id] = ['category' => $cat, 'achievements' => $achs];
     }
     $renderer->renderWithLayout('src/Modules/Achievement/Views/master', ['groups' => $grouped]);
 });
@@ -101,27 +126,68 @@ $router->add('GET', '/export/roster', function () use ($container, $renderer) {
     $userId = isset($_GET['user_id']) ? (int)$_GET['user_id'] : null;
     $userRepo = $container->get('user_repository');
     $achRepo = $container->get('achievement_repository');
-    $user = $userId ? $userRepo->find($userId) : null;
-    if (!$user) {
-        http_response_code(404);
-        echo $renderer->render('header');
-        echo '<main style="padding:1rem"><h1>User not found</h1></main>';
-        echo $renderer->render('footer');
-        return;
-    }
+    
+    // If a specific user_id is provided, render just that user
+    if ($userId !== null) {
+        $user = $userRepo->find($userId);
+        if (!$user) {
+            http_response_code(404);
+            echo $renderer->render('header');
+            echo '<main style="padding:1rem"><h1>User not found</h1></main>';
+            echo $renderer->render('footer');
+            return;
+        }
 
-    // For InMemory, get assigned achievements via helper if available
-    $ua = [];
-    if (method_exists($userRepo, 'getUserAchievements')) {
-        $ua = $userRepo->getUserAchievements($userId);
-    }
-    $assigned = [];
-    foreach ($ua as $aid => $order) {
-        $ach = $achRepo->find((int)$aid);
-        if ($ach) $assigned[] = $ach;
-    }
+        // For InMemory, get assigned achievements via helper if available
+        $ua = [];
+        if (method_exists($userRepo, 'getUserAchievements')) {
+            $ua = $userRepo->getUserAchievements($userId);
+        }
+        
+        // Sort achievements by display_order
+        $assigned = [];
+        foreach ($ua as $aid => $order) {
+            $ach = $achRepo->find((int)$aid);
+            if ($ach) {
+                $assigned[$order] = $ach;
+            }
+        }
+        ksort($assigned);
+        $assigned = array_values($assigned);
 
-    $renderer->renderWithLayout('src/Modules/User/Views/roster', ['user' => $user, 'achievements' => $assigned]);
+        $renderer->renderWithLayout('src/Modules/User/Views/roster', ['user' => $user, 'achievements' => $assigned]);
+    } else {
+        // No user_id provided: render all users
+        $users = $userRepo->all();
+        
+        // Sort users by ID
+        usort($users, function($a, $b) {
+            return $a->id <=> $b->id;
+        });
+        
+        $allUsersData = [];
+        foreach ($users as $user) {
+            $ua = [];
+            if (method_exists($userRepo, 'getUserAchievements')) {
+                $ua = $userRepo->getUserAchievements($user->id);
+            }
+            
+            // Sort achievements by display_order
+            $assigned = [];
+            foreach ($ua as $aid => $order) {
+                $ach = $achRepo->find((int)$aid);
+                if ($ach) {
+                    $assigned[$order] = $ach;
+                }
+            }
+            ksort($assigned);
+            $assigned = array_values($assigned);
+            
+            $allUsersData[] = ['user' => $user, 'achievements' => $assigned];
+        }
+        
+        $renderer->renderWithLayout('src/Modules/User/Views/roster_all', ['usersData' => $allUsersData]);
+    }
 });
 
 // API endpoint for reordering

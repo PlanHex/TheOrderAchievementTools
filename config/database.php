@@ -3,7 +3,7 @@
 return [
     'host' => '127.0.0.1',
     'dbname' => 'order_achievements',
-    'user' => 'root',
-    'pass' => '',
+    'user' => 'app',
+    'pass' => 'secret',
     'charset' => 'utf8mb4',
 ];

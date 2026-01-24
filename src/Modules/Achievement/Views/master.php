@@ -4,10 +4,16 @@
     <pre style="white-space:pre-wrap;background:#fff;padding:1rem;border:1px solid #ddd">
 <?php foreach ($groups as $g):
     $cat = $g['category'];
-    echo "[b]" . htmlspecialchars($cat->name) . "[/b]\n";
+    echo "[B]" . htmlspecialchars($cat->name) . "[/B]\n\n";
     foreach ($g['achievements'] as $a) {
-        echo "[img]" . htmlspecialchars($a->imageUrl) . "[/img] ";
-        echo "[b]" . htmlspecialchars($a->title) . "[/b] — " . htmlspecialchars($a->description) . "\n";
+        // Format: [IMG]url[/IMG][B]Title (Pts)[/B], Category - Description [code][IMG]url[/IMG][/code]
+        $ptsStr = "(" . $a->points . "p)";
+        $descStr = "";
+        if (!empty($a->description)) {
+            $descStr = ", " . htmlspecialchars($cat->name) . " - " . htmlspecialchars($a->description);
+        }
+        echo "[IMG]" . htmlspecialchars($a->imageUrl) . "[/IMG][B]" . htmlspecialchars($a->title) . " " . $ptsStr . "[/B]" . $descStr . "[code][IMG]" . htmlspecialchars($a->imageUrl) . "[/IMG][/code]\n";
+        echo "\n";
     }
     echo "\n";
 endforeach; ?></pre>

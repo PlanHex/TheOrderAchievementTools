@@ -1,7 +1,13 @@
 <?php use Core\Renderer; ?>
 <main style="padding:1rem;max-width:900px;margin:0 auto">
-    <h1>Roster for <?= Renderer::e($user->name) ?> (BBCode)</h1>
+    <h1>Complete Roster (BBCode)</h1>
     <pre style="white-space:pre-wrap;background:#fff;padding:1rem;border:1px solid #ddd">
+<?php foreach ($usersData as $userData):
+    $user = $userData['user'];
+    $achievements = $userData['achievements'];
+?>
+[B]<?= Renderer::e($user->name) ?>[/B]
+
 <?php
 // Build the image list with title attributes
 $imgList = [];
@@ -12,7 +18,7 @@ foreach ($achievements as $a) {
 }
 $renderString = implode(' ', $imgList);
 
-// Output the rendered images (only if achievements exist)
+// Output the rendered images (empty if no achievements)
 if (!empty($imgList)) {
     echo $renderString . "\n\n";
     
@@ -20,5 +26,7 @@ if (!empty($imgList)) {
     echo "Code:\n";
     echo "[plain]" . $renderString . "[/plain]\n";
 }
-?></pre>
+?>
+
+<?php endforeach; ?></pre>
 </main>

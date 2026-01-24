@@ -25,13 +25,19 @@
 
     container.addEventListener('mousedown', (e) => {
       // only allow drag if mousedown originated on a handle
-      allowDrag = !!e.target.closest('.drag-handle');
+      if (e.target.closest('.drag-handle')) {
+        allowDrag = true;
+        dragEl = e.target.closest(itemSelector);
+      }
     });
 
     container.addEventListener('dragstart', (e) => {
-      if (!allowDrag) { e.preventDefault(); return; }
-      dragEl = e.target;
+      if (!allowDrag || !dragEl) { 
+        e.preventDefault(); 
+        return; 
+      }
       e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/html', dragEl.innerHTML);
     });
 
     container.addEventListener('dragover', (e) => {
@@ -45,7 +51,10 @@
       }
     });
 
-    container.addEventListener('drop', () => {
+    container.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
       // build map id => index
       const items = Array.from(container.querySelectorAll(itemSelector));
       const orders = {};
@@ -53,10 +62,19 @@
         const id = it.dataset.id;
         if (id) orders[id] = idx + 1;
       });
+      
+      allowDrag = false;
+      dragEl = null;
+      
       postReorder(type, orders, userId).then(function(res){
         console.log(res);
         showToast('Order saved');
       }).catch(function(err){ console.error(err); showToast('Save failed'); });
+    });
+
+    container.addEventListener('dragend', () => {
+      allowDrag = false;
+      dragEl = null;
     });
   };
 
