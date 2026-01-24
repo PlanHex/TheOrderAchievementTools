@@ -1,121 +1,138 @@
-# The Order — Achievements Tool (Dev README)
+# The Order  Achievements Tool
 
-Quick start (dev):
+A PHP MVC application for managing forum achievements with dual-mode support (Demo/Production).
 
-```powershell
-php -S 127.0.0.1:8000 -t public
-```
+## Repository Structure
 
-Open `http://127.0.0.1:8000/` in your browser.
+This repository is organized into three distinct areas:
 
-Modes
-- Edit `config/app.php` and set `'mode' => 'demo'` (default) or `'production'`.
-- In production set DB credentials in `config/database.php` and optional Basic Auth in `config/app.php` under `'auth' => ['user' => 'name','pass' => 'secret']`.
+### production/  Production Server Code
+Everything needed to run the application on a server:
+- config/  Application configuration (mode, database credentials, authentication)
+- public/  Web root with entry point (index.php) and static assets
+- src/  Application source code (Controllers, Domain, Repositories, Views)
+- 	emplates/  Shared layout files
+- composer.json  PHP dependencies
 
-Data
-- Demo mode reads CSV files from `data/` and keeps changes in PHP session.
-- Production mode uses MySQL schema in `sql/sql_tables.sql`.
+**Deploy this folder to your server** and configure config/app.php and config/database.php for your environment.
 
-Developer notes
-- Views are under `src/Modules/<Feature>/Views/`.
-- Repositories live in `src/Infrastructure/Persistence/{InMemory,MySQL}` and are chosen by `src/Core/Container.php` using `config/app.php` `mode`.
-- Use `public/assets/js/sortable.js` to enable drag-and-drop ordering on lists with `data-id` attributes.
+### development/  Development Tools & Data
+Tools and data for local development:
+- data/  CSV files for Demo mode and forum output files
+- scripts/  Utility scripts:
+  - smoke.php  Validate CSV loading and repository counts
+  - seed_demo.php  Seed demo data into session
+  - check_csvs.php  Verify CSV file integrity
+  - csv_generator.ps1  Regenerate CSV files from seed data
+  - csv_to_forumpost_generator.ps1  Generate forum-formatted output
 
-Smoke tests
-- Run the basic smoke script to validate CSV loading and repository counts:
+### local/  Local Development & Testing Infrastructure
+Docker and test setup for development and CI:
+- docker/  Dockerfile and docker-compose.yml for local MySQL + Xdebug setup
+- 	ests/  PHPUnit test suite
 
-```powershell
-php scripts/smoke.php
-```
+---
 
-Running tests (PHPUnit)
+## Quick Start (Development)
 
-1. Install dev dependencies:
+### Without Docker
 
-```powershell
+1. **Start the dev server:**
+   `powershell
+   php -S 127.0.0.1:8000 -t production/public
+   `
+
+2. **Open in browser:**
+   `
+   http://127.0.0.1:8000/
+   `
+
+3. **Run smoke tests:**
+   `powershell
+   cd production
+   php ../development/scripts/smoke.php
+   `
+
+### With Docker
+
+1. **Build and start:**
+   `powershell
+   cd local/docker
+   docker compose up --build -d
+   `
+
+2. **Access the app:**
+   `
+   http://localhost:8000/
+   `
+
+---
+
+## Configuration
+
+**Development (Demo Mode):**
+- Edit production/config/app.php and set 'mode' => 'demo'
+- Demo mode reads CSV files from development/data/ and stores changes in session
+
+**Production (MySQL Mode):**
+- Edit production/config/app.php and set 'mode' => 'production'
+- Update production/config/database.php with your MySQL credentials
+- Run the SQL schema from development/data/sql/sql_tables.sql
+
+---
+
+## Testing
+
+### Run Tests Locally
+
+`powershell
+cd production
 composer install --dev
-```
-
-2. Run PHPUnit:
-
-```powershell
 ./vendor/bin/phpunit --colors=always
-```
+`
 
-Server setup (PHP + MySQL)
+### Run Tests in Docker
 
-These steps install and configure the application on a server that has PHP and MySQL available. Composer is not strictly required to run the app (the runtime code is self-contained), but it is needed for running tests and installing dev tools.
+`powershell
+cd local/docker
+docker compose run --rm app php ./vendor/bin/phpunit
+`
 
-1. Copy the repository files to your webroot (e.g., `/var/www/achievements`).
+---
 
-2. Configure PHP and webserver:
-	- Ensure `document root` points to the `public/` folder.
-	- If using Apache, enable `mod_rewrite` and point a VirtualHost to the `public/` folder. For Nginx, configure the root and try_files to `index.php`.
+## Architecture
 
-3. Configure application:
-	- Edit `config/database.php` with your MySQL credentials.
-	- Edit `config/app.php` and set `'mode' => 'production'`.
-	- Add credentials for Basic Auth in `config/app.php` (example):
+- **Feature-First MVC:** Each feature (Achievement, Category, User) lives under src/Modules/<Feature>/
+- **Dual Persistence:** Repositories have MySQL and InMemory (CSV+Session) implementations
+- **Dependency Injection:** src/Core/Container.php wires services based on configuration
 
-```php
-'auth' => [
-	 'user' => 'admin',
-	 'pass' => 'change-this-secret'
-]
-```
+See `docs/architecture.md` for detailed design documentation.
 
-4. Initialize the database:
+---
 
-```bash
-mysql -u root -p < sql/sql_tables.sql
-```
+## Key Files Reference
 
-Create the database and tables using the provided SQL. Then verify MySQL connectivity with the values in `config/database.php`.
+| Path | Purpose |
+|------|---------|
+| production/config/app.php | Mode selection & auth config |
+| production/config/database.php | MySQL credentials |
+| production/public/index.php | Front controller & routes |
+| production/src/Core/Container.php | Dependency injection |
+| development/data/ | CSV data files & forum outputs |
+| development/scripts/ | Utility scripts |
+| local/docker/docker-compose.yml | Docker setup |
 
-5. File permissions:
-	- Ensure the webserver user can read the project files. No special writable directories are required for production mode unless you add logging or uploads.
+---
 
-6. Optional: Install Composer (recommended for dev/test):
+## For Deployment
 
-```bash
-php -r "copy('https://getcomposer.org/installer','composer-setup.php');"
-php composer-setup.php
-mv composer.phar /usr/local/bin/composer
-composer install --no-dev --optimize-autoloader
-```
+1. Copy the entire production/ folder to your server
+2. Update config/app.php and config/database.php
+3. Run the SQL schema to initialize the database (if using production mode)
+4. Point your web server to production/public/
 
-7. Restart your webserver and visit your site.
+---
 
-If you run into environment-specific issues (permissions, PHP modules), collect `php -v`, `php -m`, and the webserver error logs and I can help troubleshoot.
+## License
 
-
-If you want I can add more tests or CI config.
-# TheOrderAchievementTools
- 
-Docker Compose: local development
----------------------------------
-
-- Build and run the app and a local MySQL instance with Docker Compose:
-
-```powershell
-docker compose up --build -d
-```
-
-- Visit `http://localhost:8000/` in your browser.
-- The bundled MySQL service listens on port `3306`. Default credentials in the compose file:
-	- database: `achievements`
-	- user: `app`
-	- password: `secret`
-	- root password: `root`
-
-- Xdebug is preconfigured in the image and uses `host.docker.internal:9003` by default — configure your IDE to listen on port `9003`.
-
-- To use MySQL rather than demo CSVs, edit `config/app.php` and set `'mode' => 'production'` and confirm `config/database.php` uses the above credentials (or use env-backed configuration as you prefer).
-
-Tips
-- If you only need the PHP app without MySQL, you can run the app on the built-in server:
-
-```powershell
-php -S 127.0.0.1:8000 -t public
-```
-
+See LICENSE file.

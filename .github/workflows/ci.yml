@@ -33,3 +33,39 @@ jobs:
 
       - name: Run PHPUnit
         run: vendor/bin/phpunit --colors=always
+
+  docker-tests:
+    needs: php-smoke
+    runs-on: ubuntu-latest
+    services: {}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set up PHP (for composer on runner)
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+
+      - name: Install Composer
+        run: php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+
+      - name: Install PHP deps on runner
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Build and start Docker Compose
+        run: |
+          docker compose up --build -d
+
+      - name: Wait for DB
+        run: |
+          # wait for MySQL to accept connections
+          for i in {1..30}; do docker compose exec -T db mysqladmin ping -h "127.0.0.1" --silent && break || sleep 1; done
+
+      - name: Run PHPUnit inside web container
+        run: docker compose exec -T web php vendor/bin/phpunit --colors=always
+
+      - name: Tear down Docker Compose
+        if: always()
+        run: docker compose down -v
