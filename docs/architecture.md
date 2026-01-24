@@ -21,7 +21,7 @@ This structure uses a **Feature-First** organization. Views (HTML templates) are
 ├── public/                 # Web root
 │   ├── assets/             
 │   │   ├── css/            # global.css, layout.css
-│   │   └── js/             # sortable.js (Drag & Drop logic only)
+│   │   └── js/             # Custom UI enhancements (e.g., searchable lists)
 │   ├── index.php           # Entry point (Front Controller)
 │   └── .htaccess           # Routing rules
 ├── src/                    # Application Source Code
@@ -79,7 +79,23 @@ return $this->renderer->render('Modules/Achievement/Views/index', [
 
 ```
 
-## **3.2. Routing & POST-Redirect-GET**
+## **3.3. Display Order Management**
+
+Display order is managed via numeric `Display_Order` fields and simple form inputs:
+
+* **Categories:** Edit categories to change their `Display_Order` via numeric input; categories are displayed in ascending `Display_Order` sequence.
+* **Achievements within Categories:** A dedicated view lists all achievements in a category sorted by `Display_Order`. Users can adjust the `Display_Order` value for each achievement via numeric input to reorder them within the category.
+* **User Achievements:** When viewing or editing a user's achievements, adjust the `Display_Order` value for each assigned achievement via numeric input; achievements are displayed in ascending `Display_Order` sequence.
+
+## **3.4. Achievement Assignment Interface**
+
+When assigning achievements to a user, the UI provides a searchable list:
+
+* **Search:** Users type a partial achievement name to filter the list in real-time.
+* **Selection:** Click to add an achievement to the user.
+* **No External Libraries:** Implementation uses vanilla JavaScript (ES6) only.
+
+## **3.5. Routing & POST-Redirect-GET**
 
 To prevent form resubmission issues and keep the flow simple:
 
@@ -91,20 +107,6 @@ To prevent form resubmission issues and keep the flow simple:
 
 
 3. **GET /achievements:** Displays the updated list.
-
-## **3.3. Hybrid Frontend (Drag & Drop)**
-
-While most pages are static HTML, "Reordering" requires JavaScript for a good UX.
-
-* **The View:** Renders a list with `data-id` attributes.
-* **The JS:** `public/assets/js/sortable.js` listens for drag events.
-* **The Interaction:**
-1. User drops item.
-2. JS sends an asynchronous `POST /api/reorder` (fetch API).
-3. Backend updates the order in DB/Session.
-4. JS displays a small "Saved" toast notification (no page reload needed).
-
-
 
 ---
 

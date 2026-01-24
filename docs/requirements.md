@@ -23,24 +23,23 @@ The system relies on a relational model consisting of three core entities and on
 
 **3.1. Category Management**
 
-* **Create/Edit:** Standard HTML forms to add new categories or rename existing ones.
-* **Ordering:**
-    * Adjust the global display order of categories.
-    * Reorder achievements manually within a specific category.
-* **Bulk Action:** A button to sort all achievements within a category alphabetically by Title.
+* **Create:** Standard HTML form to add new categories.
+* **Edit:** Modify the `Name` and `Display_Order` properties of existing categories.
+* **Display:** Categories are displayed in `Display_Order` sequence. Achievements within each category are displayed in their respective `Display_Order` sequence.
 
 **3.2. Achievement Management**
 
 * **CRUD:** Create and edit achievements (Title, Description, Points, Image URL).
-* **Categorization:** Move achievements between categories via dropdown selection.
-* **Viewing:** Filter and view achievements by category (Page reload with query parameters).
+* **Categorization:** Assign achievements to categories via dropdown selection at create/edit time.
+* **Sorting:** View all achievements within a category and reorder them via numeric `Display_Order` input.
+* **Display Hierarchy:** Achievements are displayed grouped by category in `Display_Order` sequence, with achievements within each category sorted by their `Display_Order`.
 
 **3.3. User Management**
 
 * **CRUD:** Create and edit users (Name).
-* **Assignment:** Assign specific achievements to users using a checkbox list or multi-select interface.
-* **Ordering:** Manually adjust the display order of a user’s assigned achievements.
-* **Viewing:** View a specific user and their list of achievements.
+* **Assignment:** Assign achievements to users via a searchable list interface (name-based filtering, no external libraries).
+* **Ordering:** Manually adjust the `Display_Order` value for each of a user's assigned achievements via numeric input.
+* **Viewing:** View a specific user and their assigned achievements sorted by `Display_Order`.
 
 **3.4. Output Generation**
 The system must generate two specific text outputs (BBCode):
@@ -57,7 +56,7 @@ The system must generate two specific text outputs (BBCode):
 * **Language:** PHP 8.3.29 (Strictly **no external libraries** or frameworks).
 * **Database:** MySQL 8.0.44.
 * **Frontend:** Standard Server-Side Rendering (HTML/CSS).
-    * **JavaScript:** Minimal Vanilla JS (ES6) used *only* for "Drag and Drop" enhancements.
+    * **JavaScript:** Minimal Vanilla JS (ES6) used for UI enhancements (e.g., searchable lists).
     * **CSS:** Custom CSS (No frameworks like Bootstrap).
 
 **4.2. Architecture Patterns**
