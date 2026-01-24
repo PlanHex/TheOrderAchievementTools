@@ -74,7 +74,26 @@ The application must support two distinct environments via configuration:
 | **Persistence** | Permanent (SQL) | Temporary (In-memory/Session only). |
 | **Security** | Basic Authentication required. | Authentication disabled (Free access). |
 
-**4.4. Security**
+**4.4. Developer Experience & Setup**
+
+* **Zero Local Installation:** All development setup and workflow scripts must be executable without requiring PHP, Composer, or MySQL installed locally on the developer's machine.
+* **Docker-First Approach:** Containerized development environment (via `local/docker/`) is the primary execution method, with all setup automation choosing Docker automatically when available.
+* **Hybrid Execution Support:** Setup scripts must intelligently auto-detect available execution methods (Docker, local PHP installation) and select the optimal option without developer intervention.
+* **Cross-Platform Support:** Setup and workflow automation must support Windows (PowerShell), macOS/Linux (Bash/Shell), and Docker regardless of platform.
+* **Common Workflows via Scripts:** All frequent development operations must be accessible via simple entry-point scripts:
+  * **Initialize-Development.ps1** / **initialize-development.sh** — One-command environment setup (validates requirements, starts containers, installs dependencies).
+  * **Start-Development.ps1** / **start-development.sh** — Start the development server and display access instructions.
+  * **Setup-Database.ps1** / **setup-db.sh** — Initialize database schema and optionally seed demo data.
+  * **Test-Application.ps1** / **test-application.sh** — Run PHPUnit tests with suite filtering support.
+  * **Stop-Development.ps1** / **stop-development.sh** — Cleanly stop running services.
+  * **Validate-Csvs.ps1** / **validate-csvs.sh** — Verify CSV data integrity (Demo mode).
+  * **Seed-DemoData.ps1** / **seed-demo-data.sh** — Populate session/in-memory stores with test data.
+* **Helper Modules:** Reusable helper functions (Docker operations, PHP detection, service management) packaged in PowerShell modules (.psm1) and shell function libraries for code reuse and maintainability.
+* **Clear Feedback:** All scripts provide color-coded status messages, progress indicators, error messages with remediation steps, and next-steps guidance.
+* **Readiness Checks:** Scripts validate service availability (MySQL readiness, Docker daemon status) before proceeding with dependent operations.
+* **No Framework Dependencies:** No additional build tools, task runners, or package managers required beyond what's provided in the repository.
+
+**4.5. Security**
 
 * **Authentication:** Basic Authentication for login (Production only).
 * **XSS Protection:** All output in HTML templates must be properly escaped.
