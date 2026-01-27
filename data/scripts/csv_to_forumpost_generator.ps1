@@ -102,8 +102,8 @@ Write-Host "Generating Rosterlist..." -ForegroundColor Cyan
 
 $rosterContent = [System.Text.StringBuilder]::new()
 
-# Sort users by ID (preserves original parsing order)
-$sortedUsers = $users | Sort-Object { [int]$_.id }
+# Sort users by Name (alphabetical) instead of ID
+$sortedUsers = $users | Sort-Object { $_.name }
 
 foreach ($u in $sortedUsers) {
     # Header: [B]UserName[/B]

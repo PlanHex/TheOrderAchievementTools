@@ -15,7 +15,7 @@ $achievements = @()
 $users = @()
 $userAchievements = @()
 
-$urlToIdMap = @{}
+$fileNameToIdMap = @{}
 $catId = 1
 $achId = 1
 $userId = 1
@@ -50,25 +50,24 @@ if (Test-Path $masterFile) {
         # Match Achievement: Handles [IMG]...[/IMG] [B]Title (Pts)[/B] Desc [code]
         elseif ($block -match "(?s)\[IMG\](?<url>.*?)\[/IMG\]\s*\[B\](?<title>.*?)(?:\s*\((?<pts>[-+]?\d+)p\))?\[/B\](?<desc>.*)") {
             $url = $Matches['url'].Trim()
+            $fileName = Split-Path $url -Leaf # Extract filename for comparison (e.g., image.png)
             $title = $Matches['title'].Trim()
             $points = if ($Matches['pts']) { [int]$Matches['pts'] } else { 0 }
             
-            # 1. Isolate Description: Take text before the first [code] tag
-            $rawDesc = $Matches['desc']
-            if ($rawDesc -match "(?s)(.*?)\[code\]") {
-                $rawDesc = $Matches[1]
+            # Check for duplicate filenames in Masterlist
+            if ($fileNameToIdMap.ContainsKey($fileName)) {
+                Write-Warning "Duplicate achievement image filename found: '$fileName' (Title: $title). Previous ID: $($fileNameToIdMap[$fileName])"
             }
-            
-            # 2. Clean Description: Remove category prefix (e.g., ", Minor Personal - ")
+
+            # Isolate Description: Take text before the first [code] tag
+            $rawDesc = $Matches['desc']
+            if ($rawDesc -match "(?s)(.*?)\[code\]") { $rawDesc = $Matches[1] }
+
+            # Clean Description: Remove category prefix (e.g., ", Minor Personal - ")
             $catEscaped = [regex]::Escape($currentCatName)
-            $cleanDesc = $rawDesc -replace "^[\s,\-\.]*$catEscaped[\s\-\.]*", ""
-            
-            # 3. Final Polish: Trim punctuation and whitespace
-            $cleanDesc = $cleanDesc.Trim(" -,`t`n`r")
-            
-            # 4. Map and Store
+            $cleanDesc = ($rawDesc -replace "^[\s,\-\.]*$catEscaped[\s\-\.]*", "").Trim(" -,`t`n`r")
             $thisAchId = $achId++
-            $urlToIdMap[$url] = $thisAchId
+            $fileNameToIdMap[$fileName] = $thisAchId # Store by filename
 
             $achievements += [PSCustomObject]@{
                 id            = $thisAchId
@@ -91,34 +90,37 @@ if (Test-Path $rosterFile) {
 
     foreach ($section in $userSections) {
         if ($section -match "^\[B\](?<userName>[^\[]+)\[/B\]") {
-            $name = $Matches['userName'].Trim()
+            $userName = $Matches['userName'].Trim()
             $thisUserId = $userId++
-            $users += [PSCustomObject]@{ id = $thisUserId; name = $name }
-
-            # Safe split using regex engine to avoid escape character errors
+            $users += [PSCustomObject]@{ id = $thisUserId; name = $userName }
             $displayArea = [regex]::Split($section, "Code:", "IgnoreCase")[0]
             $imgMatches = [regex]::Matches($displayArea, '\[IMG[^\]]*\](?<url>.*?)\[/IMG\]')
             
             $uAchOrder = 1
             foreach ($m in $imgMatches) {
                 $imgUrl = $m.Groups['url'].Value.Trim()
-                if ($urlToIdMap.ContainsKey($imgUrl)) {
+                $imgFileName = Split-Path $imgUrl -Leaf # Filename matching
+
+                if ($fileNameToIdMap.ContainsKey($imgFileName)) {
                     $userAchievements += [PSCustomObject]@{
                         user_id        = $thisUserId
-                        achievement_id = $urlToIdMap[$imgUrl]
+                        achievement_id = $fileNameToIdMap[$imgFileName]
                         display_order  = $uAchOrder++
                     }
+                }
+                else {
+                    Write-Warning "User '$userName' has an achievement image not found in master list: $imgFileName"
                 }
             }
         }
     }
 }
 
-# Export all CSVs with UTF8 encoding
+# Export CSVs...
 Write-Host "Exporting CSVs..." -ForegroundColor Green
 $categories       | Export-Csv $csvCategories       -Delimiter $delimiter -NoTypeInformation -Encoding utf8
 $achievements     | Export-Csv $csvAchievements     -Delimiter $delimiter -NoTypeInformation -Encoding utf8
 $users            | Export-Csv $csvUsers            -Delimiter $delimiter -NoTypeInformation -Encoding utf8
 $userAchievements | Export-Csv $csvUserAchievements -Delimiter $delimiter -NoTypeInformation -Encoding utf8
 
-Write-Host "Done! Files generated: $csvCategories, $csvAchievements, $csvUsers, $csvUserAchievements"
+Write-Host "Done!" -ForegroundColor Cyan
