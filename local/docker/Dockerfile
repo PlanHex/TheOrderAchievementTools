@@ -52,6 +52,3 @@ RUN { \
 } > /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 
 EXPOSE 80
-
-# Install Composer (available inside the image)
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
