@@ -41,7 +41,9 @@ class CategoryRepository implements CategoryRepositoryInterface
     {
         $rows = $_SESSION[self::SESSION_KEY] ?? [];
         usort($rows, function ($a, $b) {
-            return ($a['display_order'] <=> $b['display_order']) ?: ($a['id'] <=> $b['id']);
+            $cmp = $a['display_order'] <=> $b['display_order'];
+            if ($cmp !== 0) return $cmp;
+            return $a['id'] <=> $b['id'];
         });
 
         $out = [];

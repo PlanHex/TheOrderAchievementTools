@@ -14,8 +14,14 @@ class Container
         if (empty($this->config)) {
             $appConfigFile = __DIR__ . '/../../config/app.php';
             $dbConfigFile = __DIR__ . '/../../config/database.php';
-            $this->config['app'] = file_exists($appConfigFile) ? require $appConfigFile : [];
-            $this->config['db'] = file_exists($dbConfigFile) ? require $dbConfigFile : [];
+            if (!file_exists($appConfigFile)) {
+                throw new \RuntimeException("Missing required config file: {$appConfigFile}");
+            }
+            if (!file_exists($dbConfigFile)) {
+                throw new \RuntimeException("Missing required config file: {$dbConfigFile}");
+            }
+            $this->config['app'] = require $appConfigFile;
+            $this->config['db'] = require $dbConfigFile;
         }
         $this->registerDefaults();
     }

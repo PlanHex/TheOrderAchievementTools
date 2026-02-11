@@ -136,86 +136,18 @@ $router->add('POST', '/users/:id/achievements/reorder', function ($id) use ($con
 });
 
 $router->add('GET', '/export/master', function () use ($container, $renderer) {
-    $achRepo = $container->get('achievement_repository');
-    $catRepo = $container->get('category_repository');
-    $categories = $catRepo->all();
-    
-    // Sort categories by display_order
-    usort($categories, function($a, $b) {
-        return $a->displayOrder <=> $b->displayOrder;
-    });
-    
-    $grouped = [];
-    foreach ($categories as $cat) {
-        $achs = $achRepo->all($cat->id);
-        // Sort achievements by display_order
-        usort($achs, function($a, $b) {
-            return $a->displayOrder <=> $b->displayOrder;
-        });
-        $grouped[$cat->id] = ['category' => $cat, 'achievements' => $achs];
-    }
-    $renderer->renderWithLayout('src/Modules/Achievement/Views/master', ['groups' => $grouped]);
+    $ctrl = new \Modules\Reports\Controller\ReportsController($container->get('category_repository'), $container->get('achievement_repository'), $container->get('user_repository'), $renderer);
+    $ctrl->masterList();
 });
 
 $router->add('GET', '/export/roster', function () use ($container, $renderer) {
     $userId = isset($_GET['user_id']) ? (int)$_GET['user_id'] : null;
-    $userRepo = $container->get('user_repository');
-    $achRepo = $container->get('achievement_repository');
+    $ctrl = new \Modules\Reports\Controller\ReportsController($container->get('category_repository'), $container->get('achievement_repository'), $container->get('user_repository'), $renderer);
     
-    // If a specific user_id is provided, render just that user
     if ($userId !== null) {
-        $user = $userRepo->find($userId);
-        if (!$user) {
-            http_response_code(404);
-            echo $renderer->render('header');
-            echo '<main style="padding:1rem"><h1>User not found</h1></main>';
-            echo $renderer->render('footer');
-            return;
-        }
-
-        // Get assigned achievements for the user
-        $ua = $userRepo->getUserAchievements($userId);
-        
-        // Sort achievements by display_order
-        $assigned = [];
-        foreach ($ua as $aid => $order) {
-            $ach = $achRepo->find((int)$aid);
-            if ($ach) {
-                $assigned[$order] = $ach;
-            }
-        }
-        ksort($assigned);
-        $assigned = array_values($assigned);
-
-        $renderer->renderWithLayout('src/Modules/User/Views/roster', ['user' => $user, 'achievements' => $assigned]);
+        $ctrl->rosterUser($userId);
     } else {
-        // No user_id provided: render all users
-        $users = $userRepo->all();
-        
-        // Sort users by ID
-        usort($users, function($a, $b) {
-            return $a->id <=> $b->id;
-        });
-        
-        $allUsersData = [];
-        foreach ($users as $user) {
-            $ua = $userRepo->getUserAchievements($user->id);
-            
-            // Sort achievements by display_order
-            $assigned = [];
-            foreach ($ua as $aid => $order) {
-                $ach = $achRepo->find((int)$aid);
-                if ($ach) {
-                    $assigned[$order] = $ach;
-                }
-            }
-            ksort($assigned);
-            $assigned = array_values($assigned);
-            
-            $allUsersData[] = ['user' => $user, 'achievements' => $assigned];
-        }
-        
-        $renderer->renderWithLayout('src/Modules/User/Views/roster_all', ['usersData' => $allUsersData]);
+        $ctrl->rosterAll();
     }
 });
 
