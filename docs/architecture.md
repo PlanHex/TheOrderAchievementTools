@@ -1,62 +1,56 @@
 # **1. Architecture Overview**
 
-The system is a **Traditional MVC (Model-View-Controller)** application.
-* **The Controller:** Handles the request, interacts with the Domain Layer, and selects a View.
-* **The View:** A simple PHP file that renders HTML using data provided by the Controller.
+The system is a **Traditional MVC (Model-View-Controller)** application designed for portability and "No Framework" constraints.
+* **The Controller:** Handles the request, interacts with the Domain Layer, and selects a View (HTML or Text).
+* **The View:** A simple PHP file that renders HTML (or BBCode) using data provided by the Controller.
 * **The Model:** Managed via Repositories injected by the DI Container.
 
 **Dual Mode Strategy:**
-The "Dual Mode" (MySQL vs. Session/CSV) is handled entirely in the `src/Infrastructure` layer. The Controllers and Views do not know which mode is active.
+The "Dual Mode" (MySQL vs. Session/CSV) is handled entirely in the `src/Infrastructure` layer and `src/Core/Auth` service.
+* **Persistence:** Controllers use interfaces (`RepositoryInterface`). The Container injects either SQL-backed or Session-backed implementations based on config.
+* **Authentication:** The Auth Service checks the mode. In 'Demo', it bypasses password checks and auto-logs in a generic admin.
+
+---
 
 # **2. PHP Directory Structure**
 
-This structure uses a **Feature-First** organization. Views (HTML templates) are co-located with their relevant domain logic, rather than hidden in a global `templates` folder.
+To comply with strict deployment requirements, the **entire application** resides within the `src/` directory.
 
 ```text
 /
-├── config/                 # Configuration files
-│   ├── app.php             # Toggle 'mode' => 'production' | 'demo'
-│   └── database.php        # MySQL credentials
-├── data/                   # Data storage for Demo mode (CSV)
-├── public/                 # Web root
-│   ├── assets/             
-│   │   ├── css/            # global.css, layout.css
-│   │   └── js/             # Custom UI enhancements (e.g., searchable lists)
-│   ├── index.php           # Entry point (Front Controller)
-│   └── .htaccess           # Routing rules
-├── src/                    # Application Source Code
+├── data/                   # Data assets (SQL dumps, CSVs for Demo mode)
+├── docs/                   # Documentation
+├── local/                  # Local dev environment (Docker, Scripts)
+├── src/                    # DEPLOYABLE ARTIFACT
+│   ├── Config/             # Configuration
+│   │   ├── app.php         # Mode toggle ('production' | 'demo')
+│   │   └── database.php    # DB Credentials
 │   ├── Core/               # Shared Kernel
+│   │   ├── Auth.php        # Authentication Service (Auto-login logic)
 │   │   ├── Container.php   # Dependency Injection
+│   │   ├── Csrf.php        # CSRF Token Generator/Validator
 │   │   ├── Router.php      # Maps URL -> Controller
-│   │   ├── Renderer.php    # Helper to include View files safely
+│   │   ├── Renderer.php    # View Helper
 │   │   └── Database.php    # PDO Wrapper
 │   ├── Modules/            # FEATURE SLICES
-│   │   ├── Achievement/
-│   │   │   ├── Controller/      # AchievementController.php
-│   │   │   ├── Domain/          # Entity: Achievement
-│   │   │   ├── Repository/      # Interface: AchievementRepository
-│   │   │   └── Views/           # HTML Templates
-│   │   │       ├── index.php    # List all achievements
-│   │   │       ├── create.php   # Form to create
-│   │   │       └── edit.php     # Form to edit
-│   │   ├── Category/
+│   │   ├── Achievement/    # Achievement Management
+│   │   ├── Category/       # Category Management
+│   │   ├── User/           # User & Roster Management
+│   │   ├── Reports/        # BBCode Export Logic
 │   │   │   ├── Controller/
-│   │   │   ├── Domain/
-│   │   │   ├── Repository/
-│   │   │   └── Views/           # index.php (Reorder UI)
-│   │   ├── User/
-│   │   │   ├── Controller/
-│   │   │   ├── Domain/
-│   │   │   ├── Repository/
-│   │   │   └── Views/           # show.php (User Profile)
-│   │   └── Auth/           
-│   └── Infrastructure/     # Concrete Implementations
-│       ├── Persistence/
-│       │   ├── MySQL/      # Real DB implementations
-│       │   └── InMemory/   # Demo (Session/CSV) implementations
-└── templates/              # Global Shared Layouts
-    ├── header.php          # Navigation & <head>
-    └── footer.php          # Scripts & </body>
+│   │   │   └── Views/      # Text templates for BBCode
+│   │   └── Auth/           # Login Controller
+│   ├── Infrastructure/     # Concrete Implementations
+│   │   ├── Persistence/
+│   │   │   ├── MySQL/      # Real DB implementations
+│   │   │   └── InMemory/   # Demo (Session/CSV) implementations
+│   ├── Templates/          # Global HTML Layouts (Header/Footer)
+│   └── public/             # Web Entry Point
+│       ├── assets/         # CSS/JS
+│       ├── index.php       # Front Controller
+│       └── .htaccess       # Routing
+└── README.md
+
 ```
 
 ---
@@ -67,46 +61,38 @@ This structure uses a **Feature-First** organization. Views (HTML templates) are
 
 Instead of returning JSON, Controllers use a `Renderer` class.
 
-* **Role:** Extracts data arrays into PHP variables and includes the specific View file.
-* **Layouts:** Wraps the specific View content within `templates/header.php` and `templates/footer.php` automatically.
+* **HTML Mode:** Wraps content in `src/Templates/header.php` and `footer.php`.
+* **Raw Mode (BBCode):** Used by the `Reports` module to render plain text responses without HTML layouts.
 
-```php
-// Example usage in Controller
-return $this->renderer->render('Modules/Achievement/Views/index', [
-    'achievements' => $achievements,
-    'title' => 'All Achievements'
-]);
+## **3.2. Security Layer (Core)**
 
-```
+* **CSRF Protection:** The `Core/Csrf.php` class generates a `$_SESSION` token.
+* **Generation:** Injected into every `<form>` as a hidden input.
+* **Validation:** The Router or Base Controller validates the token on every `POST` request before executing the action.
+
+
+* **Sanitization:** All distinct outputs use `htmlspecialchars()` to prevent XSS.
 
 ## **3.3. Display Order Management**
 
-Display order is managed via numeric `Display_Order` fields and simple form inputs:
+Display order is managed via numeric `Display_Order` fields:
 
-* **Categories:** Edit categories to change their `Display_Order` via numeric input; categories are displayed in ascending `Display_Order` sequence.
-* **Achievements within Categories:** A dedicated view lists all achievements in a category sorted by `Display_Order`. Users can adjust the `Display_Order` value for each achievement via numeric input to reorder them within the category.
-* **User Achievements:** When viewing or editing a user's achievements, adjust the `Display_Order` value for each assigned achievement via numeric input; achievements are displayed in ascending `Display_Order` sequence.
+* **Global Sorting:** Repositories always return lists sorted by `Display_Order ASC`.
+* **Reordering:** Users input integers in standard input fields to re-rank items.
 
-## **3.4. Achievement Assignment Interface**
+## **3.4. Achievement Assignment**
 
-When assigning achievements to a user, the UI provides a searchable list:
+* **Many-to-Many Logic:** Handled in the `User` module.
+* **UI:** A dedicated view allows searching for achievements (JS filter) and adding them to a user.
+* **Schema:** The `User_Achievement` composite relationship is managed by the `UserRepository`.
 
-* **Search:** Users type a partial achievement name to filter the list in real-time.
-* **Selection:** Click to add an achievement to the user.
-* **No External Libraries:** Implementation uses vanilla JavaScript (ES6) only.
+## **3.5. Reporting (BBCode Generation)**
 
-## **3.5. Routing & POST-Redirect-GET**
+A dedicated **Reports Module** handles the forum export requirements.
 
-To prevent form resubmission issues and keep the flow simple:
-
-1. **GET /achievements/create:** Displays the HTML form.
-2. **POST /achievements/store:**
-* Controller accepts data.
-* Calls `$repository->save($entity)`.
-* **Redirects** to `/achievements` (HTTP 302).
-
-
-3. **GET /achievements:** Displays the updated list.
+* **Master List:** Aggregates all Categories and Achievements.
+* **Roster List:** Aggregates all User's achievements.
+* **Output:** Renders a specific `text/plain` View optimized for forum copy-pasting.
 
 ---
 
@@ -115,19 +101,20 @@ To prevent form resubmission issues and keep the flow simple:
 **Scenario:** A user wants to "Create a new Achievement" in **Demo Mode**.
 
 1. **Request:** User submits `<form action="/achievements/store" method="POST">`.
-2. **Bootstrap:** `index.php` loads config, sees `'mode' => 'demo'`.
-3. **Container:** Injects `SessionAchievementRepository` into the Controller.
-4. **Action:**
-* Controller validates `$_POST` data.
-* Creates `Achievement` Entity.
-* Calls `$repository->save($achievement)`.
+2. **Bootstrap:** `src/public/index.php` loads `src/Config/app.php` (`'mode' => 'demo'`).
+3. **Security Check:**
+* Router intercepts POST.
+* `Csrf::validate($_POST['csrf_token'])` verifies the session token.
 
 
-5. **Persistence:**
-* Repository updates `$_SESSION['achievements']`.
-* (No SQL executed, CSV untouched).
+4. **Container:** Injects `InMemoryAchievementRepository`.
+5. **Action:**
+* Controller validates data.
+* Calls `$repository->save($entity)`.
 
 
-6. **Response:**
-* Controller sends header: `Location: /achievements`.
-* Browser follows redirect and loads the List View with the new item visible.
+6. **Persistence:**
+* Repository updates `$_SESSION['achievements']` (CSV data loaded into session).
+
+
+7. **Response:** Redirects to `/achievements`.

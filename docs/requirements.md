@@ -2,99 +2,93 @@
 
 ## **1. Project Overview**
 
-Develop a web-based application to manage a custom achievement system for an internet forum. The tool allows administrators to create achievements, categorize them, and assign them to users. The primary output is generating BBCode-formatted lists ("Master List" and "Roster List") for forum publication.
+Develop a web-based application to manage a custom achievement system for an internet forum. The tool allows administrators to create achievements, categorize them, and assign them to users. The primary output is generating BBCode-formatted lists ("Master List" and "User Roster List") for forum publication.
+The project should be generated primarily by an AI, with minimal user supervision.
+
+**1.1. Basic folder structure**
+* `/data/`: Contains data assets (SQL dumps and CSV files) and legacy scripts.
+* `/src/`: The application source code (PHP/HTML/CSS/JS). This is the folder deployed to the production web server.
+* `/local/`: Scripts and Docker configuration for the local development environment.
+* `/docs/`: Documentation, including requirements and architecture specifications.
+* `/.github/`: Agent instructions and other github relevant files.
+
+The root directory should only contain the `README.md`, `.gitignore`, and license files.
 
 ---
 
 ## **2. Domain Model & Data Schema**
 
-The system relies on a relational model consisting of three core entities and one association table. All primary keys are auto-incremented integers.
+The system relies on a relational model. All primary keys are auto-incremented integers.
 
 | Entity | Attributes | Relationships |
 | --- | --- | --- |
 | **Category** | `ID`, `Name`, `Display_Order` | One-to-Many with Achievements. |
-| **Achievement** | `ID`, `Title`, `Description`, `Points` (signed int), `Image_URL`, `Display_Order`, `Category_ID` | Many-to-One with Categories. |
+| **Achievement** | `ID`, `Title`, `Description`, `Points` (signed int), `Image_URL` (string), `Display_Order`, `Category_ID` | Many-to-One with Categories. |
 | **User** | `ID`, `Name` | Many-to-Many with Achievements. |
-| **User_Achievement** | `User_ID`, `Achievement_ID`, `Display_Order` | Composite PK. Links Users to Achievements with a specific sort order. |
+| **User_Achievement** | `User_ID`, `Achievement_ID`, `Display_Order` | Composite PK (`User_ID` + `Achievement_ID`). Links Users to Achievements. |
+
+**2.1 Data Integrity Constraints**
+* **Unique Assignment:** A User cannot be assigned the same Achievement ID more than once.
+* **Deletion:** Deleting a Category must handle orphaned Achievements (restrict or cascade). Deleting a User must cascade to `User_Achievement`.
 
 ---
 
 ## **3. Functional Requirements**
 
 **3.1. Category Management**
-
 * **Create:** Standard HTML form to add new categories.
-* **Edit:** Modify the `Name` and `Display_Order` properties of existing categories.
-* **Display:** Categories are displayed in `Display_Order` sequence. Achievements within each category are displayed in their respective `Display_Order` sequence.
+* **Edit:** Modify the `Name` and `Display_Order` of existing categories.
+* **Display:** List categories sorted by `Display_Order`.
 
 **3.2. Achievement Management**
-
-* **CRUD:** Create and edit achievements (Title, Description, Points, Image URL).
-* **Categorization:** Assign achievements to categories via dropdown selection at create/edit time.
-* **Sorting:** View all achievements within a category and reorder them via numeric `Display_Order` input.
-* **Display Hierarchy:** Achievements are displayed grouped by category in `Display_Order` sequence, with achievements within each category sorted by their `Display_Order`.
+* **CRUD:** Create and edit achievements.
+    * *Note:* `Image_URL` is a text input field for an external URL. This application **does not** handle file uploads.
+* **Categorization:** Assign achievements to categories via dropdown.
+* **Sorting:** View achievements within a category and reorder them via numeric `Display_Order` input.
 
 **3.3. User Management**
-
 * **CRUD:** Create and edit users (Name).
-* **Assignment:** Assign achievements to users via a searchable list interface (name-based filtering, no external libraries).
-* **Ordering:** Manually adjust the `Display_Order` value for each of a user's assigned achievements via numeric input.
-* **Viewing:** View a specific user and their assigned achievements sorted by `Display_Order`.
+* **Assignment:** Assign achievements to users via a search interface.
+    * *Search:* Filter achievements by name to select and add to the user.
+* **Ordering:** Manually adjust the `Display_Order` for a user's assigned achievements.
+* **Viewing:** View a specific user's achivements, showing their achievements sorted by `Display_Order`.
 
 **3.4. Output Generation**
-The system must generate two specific text outputs (BBCode):
-
-* **The Master List:** A dedicated page displaying all achievements grouped by category as raw text for easy copying.
-* **The Roster List:** A dedicated page per user showing their assigned achievements as raw text.
+The system must generate two specific BBCode text outputs. The formatting logic must match the legacy scripts found in `data/scripts` and the reference files in `data/forumdata/`.
+* **The Master List:** All achievements grouped by category.
+* **The Roster List:** A list of all users and their respective assigned achievements.
 
 ---
 
-## **4. Technical Architecture & Constraints**
+## **4. Technical Constraints & Architecture**
 
 **4.1. Technology Stack**
-
-* **Language:** PHP 8.3.29 (Strictly **no external libraries** or frameworks).
+* **Language:** PHP 8.3.29.
+    * **Strict Constraint:** No external libraries, frameworks, or package managers (Composer). Standard PHP library (SPL) only.
 * **Database:** MySQL 8.0.44.
-* **Frontend:** Standard Server-Side Rendering (HTML/CSS).
-    * **JavaScript:** Minimal Vanilla JS (ES6) used for UI enhancements (e.g., searchable lists).
-    * **CSS:** Custom CSS (No frameworks like Bootstrap).
+* **Frontend:** Server-Side Rendering (HTML/CSS). Minimal Vanilla JS allowed for UX enhancements (e.g., confirmation modals).
 
-**4.2. Architecture Patterns**
-
-* **MVC (Model-View-Controller):** Logic and Presentation must be separated.
-* **Feature-Sliced Design:** Code should be organized by domain (User, Achievement) rather than technical layer (Model, View).
-* **Dependency Injection:** Used to manage the "Dual Mode" requirement.
-
-**4.3. Operating Modes**
-The application must support two distinct environments via configuration:
+**4.2. Operating Modes & Configuration**
+The application behavior is determined by a configuration variable.
 
 | Feature | **Production Mode** | **Demo Mode** |
 | --- | --- | --- |
-| **Data Source** | MySQL Database (Read/Write) | CSV Files (Read-only on load) |
-| **Persistence** | Permanent (SQL) | Temporary (In-memory/Session only). |
-| **Security** | Basic Authentication required. | Authentication disabled (Free access). |
+| **Data Source** | MySQL Database | CSV Files (from `/data/`). |
+| **Read Operations** | Read from SQL. | Load CSV data into PHP Session. |
+| **Write Operations** | Write to SQL (Permanent). | Write to PHP Session (Ephemeral/Sandbox). |
+| **Persistence** | Persistent. | Lost when session expires or browser closes. |
+| **Authentication** | Basic Auth or Form Auth required. | Authentication bypassed (Auto-login as generic admin). |
 
-**4.4. Developer Experience & Setup**
+**4.3. Security Requirements (Strict)**
+Due to the "No Framework" constraint, the following must be manually implemented:
+* **SQL Injection Prevention:** All database interaction must use **PDO Prepared Statements**. No variable interpolation in SQL strings.
+* **XSS Prevention:** All user-generated content displayed in HTML or BBCode must be sanitized/escaped using `htmlspecialchars()` or equivalent.
+* **CSRF Protection:** All state-changing forms (POST requests) must include and validate a manual CSRF token.
+* **HTTPS:** In Production, the app is assumed to run behind a TLS-enabled proxy or server.
 
-* **Zero Local Installation:** All development setup and workflow scripts must be executable without requiring PHP, Composer, or MySQL installed locally on the developer's machine.
-* **Docker-First Approach:** Containerized development environment (via `local/docker/`) is the primary execution method, with all setup automation choosing Docker automatically when available.
-* **Hybrid Execution Support:** Setup scripts must intelligently auto-detect available execution methods (Docker, local PHP installation) and select the optimal option without developer intervention.
-* **Cross-Platform Support:** Setup and workflow automation must support Windows (PowerShell), macOS/Linux (Bash/Shell), and Docker regardless of platform.
-* **Common Workflows via Scripts:** All frequent development operations must be accessible via simple entry-point scripts:
-  * **Initialize-Development.ps1** / **initialize-development.sh** — One-command environment setup (validates requirements, starts containers, installs dependencies).
-  * **Start-Development.ps1** / **start-development.sh** — Start the development server and display access instructions.
-  * **Setup-Database.ps1** / **setup-db.sh** — Initialize database schema and optionally seed demo data.
-  * **Test-Application.ps1** / **test-application.sh** — Run PHPUnit tests with suite filtering support.
-  * **Stop-Development.ps1** / **stop-development.sh** — Cleanly stop running services.
-  * **Validate-Csvs.ps1** / **validate-csvs.sh** — Verify CSV data integrity (Demo mode).
-  * **Seed-DemoData.ps1** / **seed-demo-data.sh** — Populate session/in-memory stores with test data.
-* **Helper Modules:** Reusable helper functions (Docker operations, PHP detection, service management) packaged in PowerShell modules (.psm1) and shell function libraries for code reuse and maintainability.
-* **Clear Feedback:** All scripts provide color-coded status messages, progress indicators, error messages with remediation steps, and next-steps guidance.
-* **Readiness Checks:** Scripts validate service availability (MySQL readiness, Docker daemon status) before proceeding with dependent operations.
-* **No Framework Dependencies:** No additional build tools, task runners, or package managers required beyond what's provided in the repository.
-
-**4.5. Security**
-
-* **Authentication:** Basic Authentication for login (Production only).
-* **XSS Protection:** All output in HTML templates must be properly escaped.
-* **CSRF Protection:** Forms must include anti-CSRF tokens.
+**4.4. Developer Experience**
+* **Docker-First:** The `local/docker/` folder must contain a `docker-compose.yml` that spins up the PHP and MySQL services.
+* **Workflow:** Scripts (PowerShell/Bash) in `/local/` must handle:
+    1.  Building containers.
+    2.  Initializing the database (importing `/data/*.sql`).
+    3.  Toggling between Prod/Demo modes locally.
