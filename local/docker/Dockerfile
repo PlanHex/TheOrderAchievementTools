@@ -10,11 +10,11 @@ RUN apt-get update \
 
 WORKDIR /var/www/html
 
-# Copy production code
-COPY ../production /var/www/html
+# Copy code (paths are relative to the build context)
+COPY src /var/www/html
 
 # Copy data files (for demo mode testing)
-COPY ../data /var/www/html/../data
+COPY data /var/www/data
 
 RUN chown -R www-data:www-data /var/www/html
 

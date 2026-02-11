@@ -1,13 +1,13 @@
 services:
   web:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: local/docker/Dockerfile
     ports:
       - "8000:80"
     volumes:
-      - ../../production:/var/www/html
-      - ../../data:/var/www/html/../data
+      - ../../src:/var/www/html
+      - ../../data:/var/www/data
     environment:
       - XDEBUG_MODE=debug
       - XDEBUG_CONFIG=client_host=host.docker.internal client_port=9003
@@ -24,5 +24,6 @@ services:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
+      - ../../data:/data:ro
 volumes:
   db_data:
