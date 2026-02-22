@@ -43,7 +43,27 @@ class AchievementController
         }
 
         $data = $_POST;
-        $ach = new Achievement(null, (int)$data['category_id'], $data['title'] ?? '', $data['description'] ?? null, (int)($data['points'] ?? 0), $data['image_url'] ?? null, 0);
+        $title = trim($data['title'] ?? '');
+        if (empty($title)) {
+            http_response_code(400);
+            echo $this->renderer->render('header');
+            echo '<main style="padding:1rem"><h1>Validation Error</h1><p>Achievement title cannot be empty.</p>';
+            echo '<a href="/achievements/create">Back</a></main>';
+            echo $this->renderer->render('footer');
+            exit;
+        }
+
+        $categoryId = (int)($data['category_id'] ?? 0);
+        if ($categoryId === 0) {
+            http_response_code(400);
+            echo $this->renderer->render('header');
+            echo '<main style="padding:1rem"><h1>Validation Error</h1><p>Please select a valid category.</p>';
+            echo '<a href="/achievements/create">Back</a></main>';
+            echo $this->renderer->render('footer');
+            exit;
+        }
+
+        $ach = new Achievement(null, $categoryId, $title, $data['description'] ?? null, (int)($data['points'] ?? 0), $data['image_url'] ?? null, 0);
         $this->repo->save($ach);
         header('Location: /achievements');
         exit;
@@ -92,6 +112,33 @@ class AchievementController
         
         $this->repo->save($achievement);
         header('Location: /achievements');
+        exit;
+    }
+
+    public function delete($id)
+    {
+        $token = $_POST['csrf_token'] ?? null;
+        if (!\Core\Csrf::validate($token)) {
+            http_response_code(400);
+            echo $this->renderer->render('header');
+            echo '<main style="padding:1rem"><h1>Invalid CSRF token</h1></main>';
+            echo $this->renderer->render('footer');
+            exit;
+        }
+
+        try {
+            $this->repo->delete((int)$id);
+            header('Location: /achievements');
+        } catch (\PDOException $e) {
+            http_response_code(400);
+            echo $this->renderer->render('header');
+            echo '<main style="padding:1rem">';
+            echo '<h1>Cannot Delete Achievement</h1>';
+            echo '<p>This achievement is assigned to one or more users. Please remove user assignments first.</p>';
+            echo '<a href="/achievements">Back to Achievements</a>';
+            echo '</main>';
+            echo $this->renderer->render('footer');
+        }
         exit;
     }
 

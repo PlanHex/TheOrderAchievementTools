@@ -39,10 +39,86 @@ class CategoryController
             exit;
         }
 
-        $name = $_POST['name'] ?? '';
+        $name = trim($_POST['name'] ?? '');
+        if (empty($name)) {
+            http_response_code(400);
+            echo $this->renderer->render('header');
+            echo '<main style="padding:1rem"><h1>Validation Error</h1><p>Category name cannot be empty.</p>';
+            echo '<a href="/categories/create">Back</a></main>';
+            echo $this->renderer->render('footer');
+            exit;
+        }
+
         $cat = new Category(null, $name, 0);
         $this->repo->save($cat);
         header('Location: /categories');
+        exit;
+    }
+
+    public function edit($id)
+    {
+        $category = $this->repo->find((int)$id);
+        if (!$category) {
+            http_response_code(404);
+            echo $this->renderer->render('header');
+            echo '<main style="padding:1rem"><h1>Category not found</h1></main>';
+            echo $this->renderer->render('footer');
+            return;
+        }
+        $this->renderer->renderWithLayout('src/Modules/Category/Views/edit', ['category' => $category]);
+    }
+
+    public function update($id)
+    {
+        $token = $_POST['csrf_token'] ?? null;
+        if (!\Core\Csrf::validate($token)) {
+            http_response_code(400);
+            echo $this->renderer->render('header');
+            echo '<main style="padding:1rem"><h1>Invalid CSRF token</h1></main>';
+            echo $this->renderer->render('footer');
+            exit;
+        }
+
+        $category = $this->repo->find((int)$id);
+        if (!$category) {
+            http_response_code(404);
+            echo $this->renderer->render('header');
+            echo '<main style="padding:1rem"><h1>Category not found</h1></main>';
+            echo $this->renderer->render('footer');
+            return;
+        }
+
+        $category->name = $_POST['name'] ?? $category->name;
+        $category->displayOrder = isset($_POST['display_order']) ? (int)$_POST['display_order'] : $category->displayOrder;
+        $this->repo->save($category);
+        header('Location: /categories');
+        exit;
+    }
+
+    public function delete($id)
+    {
+        $token = $_POST['csrf_token'] ?? null;
+        if (!\Core\Csrf::validate($token)) {
+            http_response_code(400);
+            echo $this->renderer->render('header');
+            echo '<main style="padding:1rem"><h1>Invalid CSRF token</h1></main>';
+            echo $this->renderer->render('footer');
+            exit;
+        }
+
+        try {
+            $this->repo->delete((int)$id);
+            header('Location: /categories');
+        } catch (\PDOException $e) {
+            http_response_code(400);
+            echo $this->renderer->render('header');
+            echo '<main style="padding:1rem">';
+            echo '<h1>Cannot Delete Category</h1>';
+            echo '<p>This category has achievements assigned to it. Please delete or move the achievements first.</p>';
+            echo '<a href="/categories">Back to Categories</a>';
+            echo '</main>';
+            echo $this->renderer->render('footer');
+        }
         exit;
     }
 

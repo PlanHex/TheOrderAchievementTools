@@ -54,6 +54,21 @@ $router->add('POST', '/categories/store', function () use ($container, $renderer
     $ctrl->store();
 });
 
+$router->add('GET', '/categories/:id/edit', function ($id) use ($container, $renderer) {
+    $ctrl = new \Modules\Category\Controller\CategoryController($container->get('category_repository'), null, $renderer);
+    $ctrl->edit($id);
+});
+
+$router->add('POST', '/categories/:id/update', function ($id) use ($container, $renderer) {
+    $ctrl = new \Modules\Category\Controller\CategoryController($container->get('category_repository'), null, $renderer);
+    $ctrl->update($id);
+});
+
+$router->add('POST', '/categories/:id/delete', function ($id) use ($container, $renderer) {
+    $ctrl = new \Modules\Category\Controller\CategoryController($container->get('category_repository'), $container->get('achievement_repository'), $renderer);
+    $ctrl->delete($id);
+});
+
 $router->add('POST', '/categories/:id/sort-alphabetically', function ($id) use ($container, $renderer) {
     $ctrl = new \Modules\Category\Controller\CategoryController($container->get('category_repository'), $container->get('achievement_repository'), $renderer);
     $ctrl->sortAlphabetically($id);
@@ -95,6 +110,11 @@ $router->add('POST', '/achievements/:id/update', function ($id) use ($container,
     $ctrl->update($id);
 });
 
+$router->add('POST', '/achievements/:id/delete', function ($id) use ($container, $renderer) {
+    $ctrl = new \Modules\Achievement\Controller\AchievementController($container->get('achievement_repository'), $container->get('category_repository'), $renderer);
+    $ctrl->delete($id);
+});
+
 $router->add('GET', '/users', function () use ($container, $renderer) {
     $repo = $container->get('user_repository');
     $users = $repo->all();
@@ -103,6 +123,11 @@ $router->add('GET', '/users', function () use ($container, $renderer) {
 
 $router->add('GET', '/users/create', function () use ($renderer) {
     $renderer->renderWithLayout('src/Modules/User/Views/create');
+});
+
+$router->add('GET', '/users/:id', function ($id) use ($container, $renderer) {
+    $ctrl = new \Modules\User\Controller\UserController($container->get('user_repository'), $container->get('achievement_repository'), $renderer);
+    $ctrl->show($id);
 });
 
 $router->add('POST', '/users/store', function () use ($container, $renderer) {
@@ -118,6 +143,11 @@ $router->add('GET', '/users/:id/edit', function ($id) use ($container, $renderer
 $router->add('POST', '/users/:id/update', function ($id) use ($container, $renderer) {
     $ctrl = new \Modules\User\Controller\UserController($container->get('user_repository'), $container->get('achievement_repository'), $renderer);
     $ctrl->update($id);
+});
+
+$router->add('POST', '/users/:id/delete', function ($id) use ($container, $renderer) {
+    $ctrl = new \Modules\User\Controller\UserController($container->get('user_repository'), $container->get('achievement_repository'), $renderer);
+    $ctrl->delete($id);
 });
 
 $router->add('POST', '/users/:id/achievements/add', function ($id) use ($container, $renderer) {

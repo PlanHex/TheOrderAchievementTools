@@ -26,6 +26,7 @@ class ReportsController
             $achs = $this->achievementRepo->all($cat->id);
             $grouped[$cat->id] = ['category' => $cat, 'achievements' => $achs];
         }
+        header('Content-Type: text/plain; charset=utf-8');
         echo $this->renderer->render('src/Modules/Reports/Views/master', ['groups' => $grouped]);
     }
 
@@ -45,6 +46,7 @@ class ReportsController
             ksort($assigned);
             $data[] = ['user' => $user, 'achievements' => array_values($assigned)];
         }
+        header('Content-Type: text/plain; charset=utf-8');
         echo $this->renderer->render('src/Modules/Reports/Views/roster_all', ['usersData' => $data]);
     }
 
@@ -64,6 +66,7 @@ class ReportsController
             }
         }
         ksort($assigned);
+        header('Content-Type: text/plain; charset=utf-8');
         echo $this->renderer->render('src/Modules/Reports/Views/roster', ['user' => $user, 'achievements' => array_values($assigned)]);
     }
 }

@@ -65,7 +65,16 @@ class UserController
             exit;
         }
 
-        $name = $_POST['name'] ?? '';
+        $name = trim($_POST['name'] ?? '');
+        if (empty($name)) {
+            http_response_code(400);
+            echo $this->renderer->render('header');
+            echo '<main style="padding:1rem"><h1>Validation Error</h1><p>User name cannot be empty.</p>';
+            echo '<a href="/users/create">Back</a></main>';
+            echo $this->renderer->render('footer');
+            exit;
+        }
+
         $user = new User(null, $name);
         $this->repo->save($user);
         header('Location: /users');
@@ -111,6 +120,33 @@ class UserController
         $user->name = $_POST['name'] ?? $user->name;
         $this->repo->save($user);
         header('Location: /users');
+        exit;
+    }
+
+    public function delete($id)
+    {
+        $token = $_POST['csrf_token'] ?? null;
+        if (!\Core\Csrf::validate($token)) {
+            http_response_code(400);
+            echo $this->renderer->render('header');
+            echo '<main style="padding:1rem"><h1>Invalid CSRF token</h1></main>';
+            echo $this->renderer->render('footer');
+            exit;
+        }
+
+        try {
+            $this->repo->delete((int)$id);
+            header('Location: /users');
+        } catch (\PDOException $e) {
+            http_response_code(400);
+            echo $this->renderer->render('header');
+            echo '<main style="padding:1rem">';
+            echo '<h1>Cannot Delete User</h1>';
+            echo '<p>This user has achievements assigned. Please remove all assignments first.</p>';
+            echo '<a href="/users">Back to Users</a>';
+            echo '</main>';
+            echo $this->renderer->render('footer');
+        }
         exit;
     }
 

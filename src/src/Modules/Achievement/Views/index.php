@@ -45,10 +45,17 @@
                 <h2><?= Renderer::e($cat->name) ?></h2>
                 <ul id="achievements-list-<?= Renderer::e($cat->id) ?>" class="achievements-list">
                     <?php foreach ($grouped[$cat->id] as $a): ?>
-                        <li>
+                        <li style="display:flex;align-items:center;justify-content:space-between;padding:0.25rem 0;border-bottom:1px solid #eee">
                             <span><strong><?= Renderer::e($a->title) ?></strong>
-                            (<?= Renderer::e($a->points) ?> pts)</span>
-                            <a href="/achievements/<?= Renderer::e($a->id) ?>/edit" style="margin-left:auto;font-size:0.9rem">[edit]</a>
+                            (<?= (int)$a->points ?> pts)</span>
+                            <div style="display:flex;gap:0.5rem;font-size:0.9rem">
+                                <a href="/achievements/<?= (int)$a->id ?>/edit">Edit</a>
+                                <a href="/achievements/<?= (int)$a->id ?>/sort">Sort</a>
+                                <form method="post" action="/achievements/<?= (int)$a->id ?>/delete" style="margin:0;display:inline">
+                                    <?= \Core\Csrf::input() ?>
+                                    <button type="submit" style="font-size:0.9rem;padding:0" onclick="return confirm('Delete this achievement?')">Delete</button>
+                                </form>
+                            </div>
                         </li>
                     <?php endforeach; ?>
                 </ul>
@@ -58,10 +65,17 @@
         <!-- Filtered view: show single category -->
         <ul id="achievements-list">
             <?php foreach ($achievements as $a): ?>
-                <li>
+                <li style="display:flex;align-items:center;justify-content:space-between;padding:0.25rem 0;border-bottom:1px solid #eee">
                     <span><strong><?= Renderer::e($a->title) ?></strong>
-                    (<?= Renderer::e($a->points) ?> pts)</span>
-                    <a href="/achievements/<?= Renderer::e($a->id) ?>/edit" style="margin-left:auto;font-size:0.9rem">[edit]</a>
+                    (<?= (int)$a->points ?> pts)</span>
+                    <div style="display:flex;gap:0.5rem;font-size:0.9rem">
+                        <a href="/achievements/<?= (int)$a->id ?>/edit">Edit</a>
+                        <a href="/achievements/<?= (int)$a->id ?>/sort">Sort</a>
+                        <form method="post" action="/achievements/<?= (int)$a->id ?>/delete" style="margin:0;display:inline">
+                            <?= \Core\Csrf::input() ?>
+                            <button type="submit" style="font-size:0.9rem;padding:0" onclick="return confirm('Delete this achievement?')">Delete</button>
+                        </form>
+                    </div>
                 </li>
             <?php endforeach; ?>
         </ul>
